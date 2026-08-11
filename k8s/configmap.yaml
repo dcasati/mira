@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mira-config
+  namespace: mira
+data:
+  MIRA_WAKE_WORD: "MIRA"
+  MIRA_CONVERSATION_TIMEOUT: "45s"
+  MIRA_WHISPER_MODEL_PATH: "/models/ggml-tiny.en.bin"
+  MIRA_MAX_RX_SECONDS: "60"
+  MIRA_MAX_TX_SECONDS: "60"
+  ZELLO_ENDPOINT: "wss://zello.io/ws"
+  AZURE_OPENAI_ENDPOINT: "https://<your-resource>.openai.azure.com"
+  AZURE_OPENAI_REALTIME_DEPLOYMENT: "<your-gpt-realtime-deployment>"
+  AZURE_OPENAI_REALTIME_VOICE: "alloy"
+  HTTP_LISTEN_ADDR: ":8080"
+  LOG_LEVEL: "INFO"

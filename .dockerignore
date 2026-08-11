@@ -1,0 +1,10 @@
+.git
+.env
+*.pem
+*.key
+*.token
+bin
+dist
+coverage.out
+README.md
+models
