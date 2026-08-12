@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: mira
-          image: myregistryvkzd.azurecr.io/mira@sha256:23e3137d34033d1b465825037f18ae40b38eda1213dd50f11ea30181bec6a0e1
+          image: myregistryvkzd.azurecr.io/mira@sha256:3aab8cddb3b937304e32469756ce59c60429ed94761f4d4cd43bbd85bd99fd0a
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

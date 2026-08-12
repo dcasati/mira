@@ -97,6 +97,10 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 
 	var sendPCM []int16
 	sendRate := t.SampleRate
+	if len(t.PCM) == 0 {
+		m.logger.Info("zello.rx_ignored", "speaker", t.Speaker, "reason", "empty_audio")
+		return nil
+	}
 	if state == StateIdle {
 		wakePCM, err := m.resampler.Resample(t.PCM, t.SampleRate, audio.WakeSampleRate)
 		if err != nil {

@@ -203,7 +203,7 @@ func (s *RealtimeSession) AskText(ctx context.Context, text string) (string, err
 	if err := s.sendJSON(map[string]any{
 		"type": "response.create",
 		"response": map[string]any{
-			"modalities": []string{"text"},
+			"output_modalities": []string{"text"},
 		},
 	}); err != nil {
 		return "", err
