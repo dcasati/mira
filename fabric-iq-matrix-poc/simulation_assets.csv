@@ -1,0 +1,7 @@
+asset_id,name,asset_type,zone,status,description
+ASSET-001,Control Node,command,Core,online,Primary command endpoint for Operator-style coordination.
+ASSET-002,Checkpoint Bravo,checkpoint,West Corridor,secure,Intermediate checkpoint used for status reports and advance approvals.
+ASSET-003,Checkpoint Charlie,checkpoint,North Corridor,pending,Destination checkpoint for controlled advancement drills.
+ASSET-004,Relay Hardline,network,Backbone,degraded,Fictional signal relay used for reset and stability procedures.
+ASSET-005,Construct A-17,simulation_construct,Training Grid,watch,Training construct with intermittent anomaly flags.
+ASSET-006,Observation Deck,monitoring,Core,online,Monitoring station for anomaly triage and event correlation.

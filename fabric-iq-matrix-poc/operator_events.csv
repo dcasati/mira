@@ -1,0 +1,7 @@
+event_time,event_id,asset_id,call_sign,severity,event_type,details
+2026-08-12T14:00:00Z,EVT-001,ASSET-001,Control,info,radio_check,Operator channel online and ready.
+2026-08-12T14:05:00Z,EVT-002,ASSET-002,Sierra 1,info,status_update,Arrived at checkpoint Bravo. Perimeter secure.
+2026-08-12T14:06:30Z,EVT-003,ASSET-003,Sierra 1,info,movement_order,Advancement to checkpoint Charlie authorized.
+2026-08-12T14:12:00Z,EVT-004,ASSET-004,Echo 2,warning,signal_degradation,Relay hardline packet loss above threshold.
+2026-08-12T14:15:00Z,EVT-005,ASSET-005,Observer,warning,anomaly_detected,Construct A-17 produced repeated timing drift.
+2026-08-12T14:20:00Z,EVT-006,ASSET-004,Echo 2,info,reset_complete,Relay hardline reset completed. Signal restored.

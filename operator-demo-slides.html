@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operator POC Demo Slides</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    main { scroll-snap-type: y mandatory; height: 100vh; overflow-y: auto; }
+    section {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      padding: 56px 72px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 28px;
+    }
+    h1 { font-size: 54px; line-height: 1.02; margin: 0; letter-spacing: -1.5px; }
+    h2 { font-size: 38px; margin: 0; letter-spacing: -0.8px; }
+    p, li { font-size: 22px; line-height: 1.45; color: var(--cp-text); }
+    .eyebrow { color: var(--cp-accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .card {
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+    }
+    .card h3 { margin: 0 0 10px; font-size: 24px; }
+    .card p, .card li { font-size: 18px; color: var(--cp-text-muted); }
+    .flow { display: grid; gap: 14px; }
+    .node {
+      border: 1px solid var(--cp-border);
+      background: var(--cp-bg-elevated);
+      border-radius: 0.625rem;
+      padding: 14px 18px;
+      font-weight: 700;
+    }
+    .arrow { color: var(--cp-accent); font-weight: 800; text-align: center; }
+    code {
+      font-family: Consolas, "Courier New", Courier, monospace;
+      color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+      padding: 2px 6px;
+      border-radius: 0.625rem;
+    }
+    .footer { color: var(--cp-text-muted); font-size: 15px; display: flex; justify-content: space-between; }
+    .callout {
+      border-left: 5px solid var(--cp-accent);
+      background: var(--cp-accent-soft);
+      border-radius: 0.625rem;
+      padding: 18px 22px;
+      font-size: 22px;
+      font-weight: 650;
+    }
+    @media (max-width: 900px) {
+      section { padding: 32px 24px; }
+      .grid, .cards { grid-template-columns: 1fr; }
+      h1 { font-size: 40px; }
+      h2 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section>
+    <div>
+      <div class="eyebrow">Slide 1 / Demo premise</div>
+      <h1>Operator: voice-first field intelligence over Zello</h1>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>The story</h3>
+        <p>A field user calls “Operator” on Zello. Operator behaves like a radio operator, says “Standby,” retrieves grounded knowledge, then replies by voice or chat.</p>
+      </div>
+      <div class="card">
+        <h3>The proof</h3>
+        <p>One assistant bridges voice, manuals, Fabric operational data, ontology relationships, and push-to-talk response patterns.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Operator POC</span><span>10-minute demo</span></div>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Slide 2 / Architecture</div>
+      <h2>End-to-end architecture</h2>
+    </div>
+    <div class="grid">
+      <div class="flow card">
+        <div class="node">Zello channel: Zavatrix</div>
+        <div class="arrow">↓ audio + chat</div>
+        <div class="node">AKS pod: MIRA gateway</div>
+        <div class="arrow">↓ realtime session</div>
+        <div class="node">Azure OpenAI Realtime</div>
+        <div class="arrow">↓ tools</div>
+        <div class="node">Foundry Agent Service</div>
+      </div>
+      <div class="flow card">
+        <div class="node">Foundry Knowledge: radio manuals</div>
+        <div class="node">Fabric IQ: operator-matrix-agent</div>
+        <div class="node">Fabric Lakehouse: operator_matrix_poc</div>
+        <div class="node">Ontology: missions, assets, events, roles</div>
+      </div>
+    </div>
+    <div class="footer"><span>Voice, chat, tools, grounding</span><span>Slide 2</span></div>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Slide 3 / Knowledge split</div>
+      <h2>Two knowledge domains, one Operator</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3><code>kb-zavatrix</code></h3>
+        <p>Unstructured radio manuals and field notes: FT-818ND setup, procedures, troubleshooting, and equipment configuration.</p>
+      </div>
+      <div class="card">
+        <h3><code>ks-fabriciq-operator-matrix</code></h3>
+        <p>Structured Fabric operational data: missions, events, assets, call signs, prowords, and ontology relationships.</p>
+      </div>
+      <div class="card">
+        <h3>Routing rule</h3>
+        <p>Manual questions go to Foundry Knowledge. Operational questions go to Fabric IQ. Long instructions can be sent to Zello chat.</p>
+      </div>
+    </div>
+    <div class="footer"><span>Grounding strategy</span><span>Slide 3</span></div>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Slide 4 / Fabric IQ data model</div>
+      <h2>Fabric operational model</h2>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Lakehouse tables</h3>
+        <ul>
+          <li><code>operator_events</code>, <code>simulation_assets</code></li>
+          <li><code>missions</code>, <code>mission_events</code></li>
+          <li><code>call_signs</code>, <code>operator_mission_manual</code></li>
+          <li><code>original_roles</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Ontology</h3>
+        <p>Mission links to Procedure, Asset, CallSign, and Event. Role links to CallSign and Mission. This gives Fabric IQ domain semantics.</p>
+      </div>
+    </div>
+    <div class="callout">Example: “What happened on the relay hardline?” → ASSET-004 → operator_events → two grounded events.</div>
+    <div class="footer"><span>Fabric IQ + ontology</span><span>Slide 4</span></div>
+  </section>
+
+  <section>
+    <div>
+      <div class="eyebrow">Slide 5 / Demo script</div>
+      <h2>Talk track and live prompts</h2>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3>Voice demo</h3>
+        <p>“Operator, what happened on the relay hardline? Over.”</p>
+        <p>Expected: Operator says “Standby,” queries Fabric IQ, then reads the two relay events.</p>
+      </div>
+      <div class="card">
+        <h3>Chat demo</h3>
+        <p>“Operator, send me Mission One details over chat.”</p>
+        <p>Expected: concise voice acknowledgement plus detailed Zello chat message.</p>
+      </div>
+    </div>
+    <div class="callout">Close: This is a POC, not the hardened architecture. Phase 2 adds production auth, CI/CD, monitoring, evals, and safer multi-channel operations.</div>
+    <div class="footer"><span>Ready for 10 minutes</span><span>Slide 5</span></div>
+  </section>
+</main>
+</body>
+</html>

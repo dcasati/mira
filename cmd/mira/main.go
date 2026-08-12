@@ -9,12 +9,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/dcasati/mira/internal/audio"
 	miraazure "github.com/dcasati/mira/internal/azure"
 	"github.com/dcasati/mira/internal/config"
 	"github.com/dcasati/mira/internal/conversation"
+	"github.com/dcasati/mira/internal/foundryiq"
 	"github.com/dcasati/mira/internal/health"
 	"github.com/dcasati/mira/internal/metrics"
+	"github.com/dcasati/mira/internal/telemetry"
 	"github.com/dcasati/mira/internal/wakeword"
 	"github.com/dcasati/mira/internal/zello"
 )
@@ -67,16 +70,63 @@ func main() {
 		MaxRXSeconds: cfg.MaxRXSeconds,
 		MaxTXSeconds: cfg.MaxTXSeconds,
 	}, zello.NewOpusFactory(), resampler, logger, m)
+	var telemetryTools *telemetry.ToolRunner
+	if cfg.TelemetryEnabled() {
+		cred, err := azidentity.NewDefaultAzureCredential(nil)
+		if err != nil {
+			logger.Error("telemetry.credential_failed", "error", err)
+			os.Exit(1)
+		}
+		telemetryClient, err := telemetry.NewClient(telemetry.Config{
+			Endpoint:        cfg.FabricKQLEndpoint,
+			Database:        cfg.FabricKQLDatabase,
+			Table:           cfg.FabricKQLTable,
+			TimeColumn:      cfg.TelemetryTimeColumn,
+			DeviceColumn:    cfg.TelemetryDeviceColumn,
+			DefaultLookback: cfg.TelemetryDefaultLookback,
+			MaxRows:         cfg.TelemetryMaxRows,
+			TokenScope:      cfg.FabricKQLTokenScope,
+		}, cred)
+		if err != nil {
+			logger.Error("telemetry.config_failed", "error", err)
+			os.Exit(2)
+		}
+		telemetryTools = telemetry.NewToolRunner(telemetryClient)
+		logger.Info("telemetry.enabled", "endpoint", cfg.FabricKQLEndpoint, "database", cfg.FabricKQLDatabase, "table", cfg.FabricKQLTable)
+	}
+	var foundryIQTools *foundryiq.ToolRunner
+	if cfg.FoundryIQEnabled() {
+		cred, err := azidentity.NewDefaultAzureCredential(nil)
+		if err != nil {
+			logger.Error("foundry_iq.credential_failed", "error", err)
+			os.Exit(1)
+		}
+		foundryIQClient, err := foundryiq.NewClient(foundryiq.Config{
+			ProjectEndpoint: cfg.FoundryProjectEndpoint,
+			AgentName:       cfg.FoundryIQAgentName,
+			Model:           cfg.FoundryIQModel,
+			MaxOutputChars:  cfg.FoundryIQMaxOutputChars,
+		}, cred)
+		if err != nil {
+			logger.Error("foundry_iq.config_failed", "error", err)
+			os.Exit(2)
+		}
+		foundryIQTools = foundryiq.NewToolRunner(foundryIQClient)
+		logger.Info("foundry_iq.enabled", "project_endpoint", cfg.FoundryProjectEndpoint, "agent", cfg.FoundryIQAgentName)
+	}
 	azureFactory, err := miraazure.NewFactory(miraazure.Config{
-		Endpoint:   cfg.AzureOpenAIEndpoint,
-		Deployment: cfg.AzureOpenAIRealtimeDeployment,
-		Voice:      cfg.AzureVoice,
+		Endpoint:      cfg.AzureOpenAIEndpoint,
+		Deployment:    cfg.AzureOpenAIRealtimeDeployment,
+		Voice:         cfg.AzureVoice,
+		LookupFiller:  cfg.LookupFiller,
+		TelemetryTool: telemetryTools,
+		FoundryIQTool: foundryIQTools,
 	}, resampler, logger)
 	if err != nil {
 		logger.Error("azure.credential_failed", "error", err)
 		os.Exit(1)
 	}
-	manager := conversation.NewManager(cfg.ConversationTimeout, cfg.ZelloUsername, detector, resampler, azureFactory, zelloClient, logger, m)
+	manager := conversation.NewManager(cfg.ConversationTimeout, cfg.ZelloUsername, cfg.WakeWord, detector, resampler, azureFactory, zelloClient, logger, m)
 	healthServer := health.New(cfg.HTTPListenAddr, readiness{zello: zelloClient, detector: detector}, m.Handler(), logger)
 
 	errCh := make(chan error, 4)

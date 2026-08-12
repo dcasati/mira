@@ -27,6 +27,21 @@ type Config struct {
 	AzureOpenAIEndpoint           string
 	AzureOpenAIRealtimeDeployment string
 	AzureVoice                    string
+	LookupFiller                  string
+
+	FabricKQLEndpoint        string
+	FabricKQLDatabase        string
+	FabricKQLTable           string
+	FabricKQLTokenScope      string
+	TelemetryTimeColumn      string
+	TelemetryDeviceColumn    string
+	TelemetryDefaultLookback time.Duration
+	TelemetryMaxRows         int
+
+	FoundryProjectEndpoint  string
+	FoundryIQAgentName      string
+	FoundryIQModel          string
+	FoundryIQMaxOutputChars int
 
 	HTTPListenAddr string
 	LogLevel       slog.Level
@@ -34,7 +49,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		WakeWord:                      env("MIRA_WAKE_WORD", "MIRA"),
+		WakeWord:                      env("MIRA_WAKE_WORD", "MIRA,OPERATOR"),
 		ConversationTimeout:           durationEnv("MIRA_CONVERSATION_TIMEOUT", 45*time.Second),
 		WhisperModelPath:              os.Getenv("MIRA_WHISPER_MODEL_PATH"),
 		MaxRXSeconds:                  intEnv("MIRA_MAX_RX_SECONDS", 60),
@@ -48,6 +63,19 @@ func Load() (Config, error) {
 		AzureOpenAIEndpoint:           os.Getenv("AZURE_OPENAI_ENDPOINT"),
 		AzureOpenAIRealtimeDeployment: firstNonEmpty(os.Getenv("AZURE_OPENAI_REALTIME_DEPLOYMENT"), os.Getenv("AZURE_OPENAI_DEPLOYMENT_NAME")),
 		AzureVoice:                    env("AZURE_OPENAI_REALTIME_VOICE", "alloy"),
+		LookupFiller:                  env("MIRA_LOOKUP_FILLER", "Hold on."),
+		FabricKQLEndpoint:             os.Getenv("FABRIC_KQL_ENDPOINT"),
+		FabricKQLDatabase:             os.Getenv("FABRIC_KQL_DATABASE"),
+		FabricKQLTable:                os.Getenv("FABRIC_KQL_TABLE"),
+		FabricKQLTokenScope:           env("FABRIC_KQL_TOKEN_SCOPE", "https://kusto.kusto.windows.net/.default"),
+		TelemetryTimeColumn:           env("MIRA_TELEMETRY_TIME_COLUMN", "Timestamp"),
+		TelemetryDeviceColumn:         env("MIRA_TELEMETRY_DEVICE_COLUMN", "DeviceId"),
+		TelemetryDefaultLookback:      durationEnv("MIRA_TELEMETRY_DEFAULT_LOOKBACK", 15*time.Minute),
+		TelemetryMaxRows:              intEnv("MIRA_TELEMETRY_MAX_ROWS", 20),
+		FoundryProjectEndpoint:        os.Getenv("FOUNDRY_PROJECT_ENDPOINT"),
+		FoundryIQAgentName:            os.Getenv("FOUNDRY_IQ_AGENT_NAME"),
+		FoundryIQModel:                os.Getenv("FOUNDRY_IQ_MODEL"),
+		FoundryIQMaxOutputChars:       intEnv("FOUNDRY_IQ_MAX_OUTPUT_CHARS", 6000),
 		HTTPListenAddr:                env("HTTP_LISTEN_ADDR", ":8080"),
 		LogLevel:                      parseLogLevel(env("LOG_LEVEL", "INFO")),
 	}
@@ -88,7 +116,52 @@ func (c Config) Validate() error {
 	if !strings.HasPrefix(c.ZelloEndpoint, "wss://") {
 		errs = append(errs, errors.New("ZELLO_ENDPOINT must use wss://"))
 	}
+	if c.TelemetryEnabled() {
+		for name, value := range map[string]string{
+			"FABRIC_KQL_ENDPOINT": c.FabricKQLEndpoint,
+			"FABRIC_KQL_DATABASE": c.FabricKQLDatabase,
+			"FABRIC_KQL_TABLE":    c.FabricKQLTable,
+		} {
+			if strings.TrimSpace(value) == "" {
+				errs = append(errs, fmt.Errorf("%s is required when any Fabric KQL telemetry setting is provided", name))
+			}
+		}
+		if c.TelemetryDefaultLookback <= 0 {
+			errs = append(errs, errors.New("MIRA_TELEMETRY_DEFAULT_LOOKBACK must be positive"))
+		}
+		if c.TelemetryMaxRows <= 0 {
+			errs = append(errs, errors.New("MIRA_TELEMETRY_MAX_ROWS must be positive"))
+		}
+	}
+	if c.FoundryIQEnabled() {
+		for name, value := range map[string]string{
+			"FOUNDRY_PROJECT_ENDPOINT": c.FoundryProjectEndpoint,
+			"FOUNDRY_IQ_AGENT_NAME":    c.FoundryIQAgentName,
+		} {
+			if strings.TrimSpace(value) == "" {
+				errs = append(errs, fmt.Errorf("%s is required when any Foundry IQ setting is provided", name))
+			}
+		}
+		if c.FoundryProjectEndpoint != "" && !strings.HasPrefix(c.FoundryProjectEndpoint, "https://") {
+			errs = append(errs, errors.New("FOUNDRY_PROJECT_ENDPOINT must use https://"))
+		}
+		if c.FoundryIQMaxOutputChars <= 0 {
+			errs = append(errs, errors.New("FOUNDRY_IQ_MAX_OUTPUT_CHARS must be positive"))
+		}
+	}
 	return errors.Join(errs...)
+}
+
+func (c Config) TelemetryEnabled() bool {
+	return strings.TrimSpace(c.FabricKQLEndpoint) != "" ||
+		strings.TrimSpace(c.FabricKQLDatabase) != "" ||
+		strings.TrimSpace(c.FabricKQLTable) != ""
+}
+
+func (c Config) FoundryIQEnabled() bool {
+	return strings.TrimSpace(c.FoundryProjectEndpoint) != "" ||
+		strings.TrimSpace(c.FoundryIQAgentName) != "" ||
+		strings.TrimSpace(c.FoundryIQModel) != ""
 }
 
 func env(name, fallback string) string {

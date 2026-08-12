@@ -34,7 +34,7 @@ type opusDecoder struct {
 }
 
 func (d *opusDecoder) Decode(packet []byte) ([]int16, error) {
-	max := d.sampleRate * 60 / 1000
+	max := d.sampleRate * 120 / 1000
 	pcm := make([]int16, max)
 	n, err := d.d.Decode(packet, pcm)
 	if err != nil {

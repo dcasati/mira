@@ -9,14 +9,19 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/dcasati/mira/internal/audio"
 	"github.com/dcasati/mira/internal/conversation"
+	"github.com/dcasati/mira/internal/foundryiq"
+	"github.com/dcasati/mira/internal/telemetry"
 )
 
 const TokenScope = "https://ai.azure.com/.default"
 
 type Config struct {
-	Endpoint   string
-	Deployment string
-	Voice      string
+	Endpoint      string
+	Deployment    string
+	Voice         string
+	LookupFiller  string
+	TelemetryTool *telemetry.ToolRunner
+	FoundryIQTool *foundryiq.ToolRunner
 }
 
 type Factory struct {

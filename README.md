@@ -16,6 +16,8 @@ MIRA is a headless Go voice bot for a private Zello Friends & Family channel. It
 - local wake detection abstraction with whisper.cpp (`-tags whisper`)
 - Azure OpenAI Realtime WebSocket client using Microsoft Entra ID via `azidentity.DefaultAzureCredential`
 - persistent Azure Realtime session during the active conversation window
+- optional Foundry IQ manual/procedure grounding through a Foundry project agent with file search
+- optional Fabric Real-Time Intelligence/Eventhouse telemetry tools for MQTT/Eventstream POC queries
 - explicit IDLE → ACTIVATING → ACTIVE → EXPIRING → IDLE state machine
 - `/healthz`, `/readyz`, and Prometheus-style `/metrics`
 - Dockerfile and AKS manifests for `namespace: mira`, workload `mira-gateway`
@@ -28,6 +30,8 @@ MIRA is a headless Go voice bot for a private Zello Friends & Family channel. It
 - kubectl
 - an AKS cluster with outbound internet access
 - an Azure OpenAI or Foundry resource with a deployed Realtime model such as `gpt-realtime`
+- optional Foundry project agent with file search enabled for manual/procedure grounding
+- optional Fabric Eventstream routing MQTT telemetry into a KQL database/Eventhouse table
 - a dedicated Zello Friends & Family account for MIRA
 - a whisper.cpp model, for example `ggml-tiny.en.bin`; the supplied Dockerfile bakes `tiny.en` into `/models/ggml-tiny.en.bin`
 
@@ -133,7 +137,7 @@ azure.workload.identity/client-id: "<managed-identity-client-id>"
 Production environment variables:
 
 ```text
-MIRA_WAKE_WORD=MIRA
+MIRA_WAKE_WORD=MIRA,OPERATOR
 MIRA_CONVERSATION_TIMEOUT=45s
 MIRA_WHISPER_MODEL_PATH=/models/ggml-tiny.en.bin
 MIRA_MAX_RX_SECONDS=60
@@ -146,9 +150,54 @@ ZELLO_AUTH_TOKEN=
 AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
 AZURE_OPENAI_REALTIME_DEPLOYMENT=<deployment-name>
 AZURE_OPENAI_REALTIME_VOICE=alloy
+MIRA_LOOKUP_FILLER=Hold on.
+FABRIC_KQL_ENDPOINT=https://<eventhouse-cluster>.kusto.fabric.microsoft.com
+FABRIC_KQL_DATABASE=<kql-database-name>
+FABRIC_KQL_TABLE=Telemetry
+FABRIC_KQL_TOKEN_SCOPE=https://kusto.kusto.windows.net/.default
+MIRA_TELEMETRY_TIME_COLUMN=Timestamp
+MIRA_TELEMETRY_DEVICE_COLUMN=DeviceId
+MIRA_TELEMETRY_DEFAULT_LOOKBACK=15m
+MIRA_TELEMETRY_MAX_ROWS=20
+FOUNDRY_PROJECT_ENDPOINT=https://<foundry-account>.services.ai.azure.com/api/projects/<project-name>
+FOUNDRY_IQ_AGENT_NAME=operator-manuals
+FOUNDRY_IQ_MODEL=gpt-5-mini
+FOUNDRY_IQ_MAX_OUTPUT_CHARS=6000
 HTTP_LISTEN_ADDR=:8080
 LOG_LEVEL=INFO
 ```
+
+The Foundry IQ settings are optional but required for the manuals POC. In Azure AI Foundry, create a project agent with file search, upload the manuals to its vector store, and set `FOUNDRY_PROJECT_ENDPOINT` plus `FOUNDRY_IQ_AGENT_NAME`. When enabled, Operator exposes `query_foundry_iq_manuals` to the Realtime model and uses it before answering manual, setup, maintenance, troubleshooting, error-code, or documented-spec questions.
+
+`MIRA_LOOKUP_FILLER` is spoken before longer tool lookups, such as Foundry IQ manual searches or telemetry queries. Set it to a short phrase like `Hold on.` or leave it empty to disable filler speech.
+
+Example worker prompts:
+
+```text
+Operator, what does the manual say about calibrating the device?
+Operator, look up the startup procedure.
+Operator, what does error E42 mean?
+Operator, look up the startup procedure and send it in chat.
+```
+
+The Fabric/Eventhouse settings are optional. If `FABRIC_KQL_ENDPOINT`, `FABRIC_KQL_DATABASE`, and `FABRIC_KQL_TABLE` are unset, MIRA runs exactly as a voice assistant without telemetry tools. For the POC, configure your Fabric Eventstream to accept MQTT telemetry from on-premises devices and land those events in the configured KQL table. The table must have a time column and device identifier column matching `MIRA_TELEMETRY_TIME_COLUMN` and `MIRA_TELEMETRY_DEVICE_COLUMN`.
+
+With telemetry enabled, the Realtime model can call two tools:
+
+- `get_device_telemetry`: recent telemetry rows for a device or across devices
+- `summarize_device_metric`: count/avg/min/max/latest timestamp for one numeric metric
+
+Operator can also call `send_zello_chat_message` during voice conversations when the worker explicitly asks to send, post, or put instructions in chat. This uses Zello `send_text_message` to post concise instructions to the current channel.
+
+Example worker prompts:
+
+```text
+MIRA, what's the latest telemetry for pump-1?
+MIRA, summarize pump-1 temperature over the last 30 minutes.
+MIRA, are any devices reporting alarms right now?
+```
+
+Grant the AKS workload identity permission to query the Fabric KQL database/Eventhouse. The exact permission surface depends on your Fabric tenant setup; for the POC, reader/viewer access on the KQL database is sufficient.
 
 Secrets must stay outside the image and outside git. Use `k8s/secret.example.yaml.sample` only as a template. It intentionally does not use a `.yaml` extension so `kubectl apply -f k8s/` cannot overwrite the real Secret with placeholders.
 

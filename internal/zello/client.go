@@ -297,7 +297,7 @@ func (c *Client) handleText(ctx context.Context, data []byte) error {
 			decoder:    decoder,
 			maxSamples: header.SampleRate * c.cfg.MaxRXSeconds,
 		})
-		c.logger.Info("zello.rx_started", "channel", event.Channel, "speaker", event.From, "stream_id", event.StreamID)
+		c.logger.Info("zello.rx_started", "channel", event.Channel, "speaker", event.From, "stream_id", event.StreamID, "sample_rate", header.SampleRate, "frames_per_packet", header.FramesPerPacket, "frame_size_ms", header.FrameSizeMS, "packet_duration", event.PacketDuration)
 	case "on_stream_stop":
 		value, ok := c.streams.LoadAndDelete(event.StreamID)
 		if !ok {

@@ -38,7 +38,7 @@ type fakeSession struct {
 }
 
 func (s *fakeSession) ID() string { return s.id }
-func (s *fakeSession) AskAudio(context.Context, []int16, int) ([]int16, int, error) {
+func (s *fakeSession) AskAudio(context.Context, []int16, int, ToolInterims) ([]int16, int, error) {
 	s.asks++
 	return []int16{1, 2, 3}, audio.AzureSampleRate, nil
 }
@@ -168,6 +168,21 @@ func TestTextActivationAndFollowupUseSameSession(t *testing.T) {
 	}
 }
 
+func TestTextActivationUsesConfiguredWakeWord(t *testing.T) {
+	azure := &fakeAzureFactory{}
+	tx := &fakeTX{}
+	m := testManager(fakeDetector{result: wakeword.Result{}}, azure, tx)
+	if err := m.HandleTextMessage(context.Background(), TextMessage{Speaker: "alice", Text: "Operator, get me an exit"}); err != nil {
+		t.Fatal(err)
+	}
+	if azure.sessions != 1 {
+		t.Fatalf("sessions = %d", azure.sessions)
+	}
+	if azure.session.texts != 1 {
+		t.Fatalf("texts = %d", azure.session.texts)
+	}
+}
+
 func TestInactiveTextIgnored(t *testing.T) {
 	azure := &fakeAzureFactory{}
 	tx := &fakeTX{}
@@ -193,7 +208,7 @@ func TestSelfTextIgnored(t *testing.T) {
 }
 
 func testManager(det wakeword.Detector, azure *fakeAzureFactory, tx *fakeTX) *Manager {
-	return NewManager(45*time.Second, "mira-bot", det, audio.LinearResampler{}, azure, tx, slog.Default(), &metrics.Metrics{})
+	return NewManager(45*time.Second, "mira-bot", "MIRA,OPERATOR", det, audio.LinearResampler{}, azure, tx, slog.Default(), &metrics.Metrics{})
 }
 
 func testTransmission(speaker string) Transmission {

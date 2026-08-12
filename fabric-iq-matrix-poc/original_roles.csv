@@ -1,0 +1,6 @@
+role_id,role_name,archetype,call_sign,description,preferred_proword,related_missions
+ROLE-001,Analyst One,field analyst,Sierra 1,Primary field analyst assigned to checkpoint advancement and perimeter reporting,Wilco,MISSION-001
+ROLE-002,The Mentor,advisor,Control,Senior advisor persona that interprets mission context and recommends next steps,Roger,MISSION-001;MISSION-003
+ROLE-003,Signal Runner,network operator,Echo 2,Network operator persona responsible for relay hardline recovery and signal status,Roger,MISSION-002
+ROLE-004,The Observer,monitoring specialist,Observer,Monitoring persona focused on construct drift and anomaly triage,Affirmative,MISSION-003
+ROLE-005,Gatekeeper,checkpoint coordinator,Control,Coordinator persona for checkpoint Bravo and Charlie movement approvals,Standby,MISSION-001

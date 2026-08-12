@@ -1,0 +1,6 @@
+call_sign,unit_type,nato_expansion,role,preferred_ack
+Control,base,Charlie Oscar November Tango Romeo Oscar Lima,Base coordination node,Roger
+Operator,base,Oscar Papa Echo Romeo Alpha Tango Oscar Romeo,Assistant/operator voice,Standby
+Sierra 1,field_unit,Sierra One,Forward field unit,Wilco
+Echo 2,network_unit,Echo Two,Relay and signal operator,Roger
+Observer,monitoring_unit,Oscar Bravo Sierra Echo Romeo Victor Echo Romeo,Anomaly observer,Affirmative

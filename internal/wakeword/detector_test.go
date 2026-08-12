@@ -27,3 +27,13 @@ func TestMatchTranscriptActivatesCommonASRSpellings(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchTranscriptActivatesOperator(t *testing.T) {
+	got := MatchTranscript("MIRA,OPERATOR", "Operator, get me an exit.")
+	if !got.Activated {
+		t.Fatal("expected activation")
+	}
+	if got.Query != "get me an exit." {
+		t.Fatalf("query = %q", got.Query)
+	}
+}

@@ -31,9 +31,17 @@ type TextMessage struct {
 
 type AzureSession interface {
 	ID() string
-	AskAudio(ctx context.Context, pcm []int16, sampleRate int) ([]int16, int, error)
+	AskAudio(ctx context.Context, pcm []int16, sampleRate int, interim ToolInterims) ([]int16, int, error)
 	AskText(ctx context.Context, text string) (string, error)
 	Close(ctx context.Context) error
+}
+
+type AudioInterim func(ctx context.Context, pcm []int16, sampleRate int) error
+type TextInterim func(ctx context.Context, text string) error
+
+type ToolInterims struct {
+	Audio AudioInterim
+	Text  TextInterim
 }
 
 type AzureFactory interface {
@@ -50,6 +58,7 @@ type Manager struct {
 	conv        Conversation
 	timeout     time.Duration
 	botUsername string
+	wakeWord    string
 	detector    wakeword.Detector
 	resampler   audio.Resampler
 	azure       AzureFactory
@@ -60,11 +69,12 @@ type Manager struct {
 	now         func() time.Time
 }
 
-func NewManager(timeout time.Duration, botUsername string, detector wakeword.Detector, resampler audio.Resampler, azure AzureFactory, tx Transmitter, logger *slog.Logger, metrics *metrics.Metrics) *Manager {
+func NewManager(timeout time.Duration, botUsername, wakeWord string, detector wakeword.Detector, resampler audio.Resampler, azure AzureFactory, tx Transmitter, logger *slog.Logger, metrics *metrics.Metrics) *Manager {
 	return &Manager{
 		conv:        Conversation{State: StateIdle},
 		timeout:     timeout,
 		botUsername: botUsername,
+		wakeWord:    wakeWord,
 		detector:    detector,
 		resampler:   resampler,
 		azure:       azure,
@@ -127,7 +137,10 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		return err
 	}
 
-	respPCM, respRate, err := session.AskAudio(ctx, sendPCM, sendRate)
+	respPCM, respRate, err := session.AskAudio(ctx, sendPCM, sendRate, ToolInterims{
+		Audio: m.tx.TransmitPCM,
+		Text:  m.tx.TransmitText,
+	})
 	if err != nil {
 		m.End(ctx, "azure_error")
 		return err
@@ -163,7 +176,7 @@ func (m *Manager) HandleTextMessage(ctx context.Context, msg TextMessage) error 
 
 	text := msg.Text
 	if state == StateIdle {
-		result := wakeword.MatchTranscript("MIRA,MEERA,MYRA,MIRAH,MEARA", msg.Text)
+		result := wakeword.MatchTranscript(m.wakeWord, msg.Text)
 		if !result.Activated {
 			m.logger.Info("wakeword.not_detected", "speaker", msg.Speaker, "input", "text")
 			return nil

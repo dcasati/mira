@@ -4,7 +4,7 @@ metadata:
   name: mira-config
   namespace: mira
 data:
-  MIRA_WAKE_WORD: "MIRA,MEERA,MYRA,MIRAH,MEARA"
+  MIRA_WAKE_WORD: "MIRA,MEERA,MYRA,MIRAH,MEARA,OPERATOR"
   MIRA_CONVERSATION_TIMEOUT: "45s"
   MIRA_WHISPER_MODEL_PATH: "/models/ggml-tiny.en.bin"
   MIRA_MAX_RX_SECONDS: "60"
@@ -12,6 +12,19 @@ data:
   ZELLO_ENDPOINT: "wss://zello.io/ws"
   AZURE_OPENAI_ENDPOINT: "https://instance-openai-dc.openai.azure.com"
   AZURE_OPENAI_REALTIME_DEPLOYMENT: "mira-gpt-realtime-mini"
-  AZURE_OPENAI_REALTIME_VOICE: "alloy"
+  AZURE_OPENAI_REALTIME_VOICE: "echo"
+  MIRA_LOOKUP_FILLER: "Hold on."
+  # POC telemetry tools are disabled until these three Fabric/Eventhouse values are set.
+  # FABRIC_KQL_ENDPOINT: "https://<eventhouse-cluster>.kusto.fabric.microsoft.com"
+  # FABRIC_KQL_DATABASE: "<kql-database-name>"
+  # FABRIC_KQL_TABLE: "Telemetry"
+  MIRA_TELEMETRY_TIME_COLUMN: "Timestamp"
+  MIRA_TELEMETRY_DEVICE_COLUMN: "DeviceId"
+  MIRA_TELEMETRY_DEFAULT_LOOKBACK: "15m"
+  MIRA_TELEMETRY_MAX_ROWS: "20"
+  FOUNDRY_PROJECT_ENDPOINT: "https://admin-2434-resource.services.ai.azure.com/api/projects/admin-2434"
+  FOUNDRY_IQ_AGENT_NAME: "operator-manuals"
+  FOUNDRY_IQ_MODEL: "gpt-5-mini"
+  FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
   HTTP_LISTEN_ADDR: ":8080"
   LOG_LEVEL: "DEBUG"
