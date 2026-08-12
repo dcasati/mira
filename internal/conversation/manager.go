@@ -98,6 +98,7 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		}
 		if !result.Activated {
 			m.logger.Info("wakeword.not_detected", "speaker", t.Speaker)
+			m.logger.Debug("wakeword.transcript", "speaker", t.Speaker, "transcript", result.Transcript)
 			return nil
 		}
 		m.metrics.WakeDetectionsTotal.Add(1)

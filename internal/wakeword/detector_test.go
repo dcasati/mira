@@ -19,3 +19,11 @@ func TestMatchTranscriptAvoidsSubstringFalsePositive(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchTranscriptActivatesCommonASRSpellings(t *testing.T) {
+	for _, transcript := range []string{"Meera tell me a joke", "hey Myra, weather tomorrow", "Mirah how long to Banff"} {
+		if got := MatchTranscript("MIRA", transcript); !got.Activated {
+			t.Fatalf("expected activation for %q", transcript)
+		}
+	}
+}

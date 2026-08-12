@@ -4,7 +4,7 @@ metadata:
   name: mira-config
   namespace: mira
 data:
-  MIRA_WAKE_WORD: "MIRA"
+  MIRA_WAKE_WORD: "MIRA,MEERA,MYRA,MIRAH,MEARA"
   MIRA_CONVERSATION_TIMEOUT: "45s"
   MIRA_WHISPER_MODEL_PATH: "/models/ggml-tiny.en.bin"
   MIRA_MAX_RX_SECONDS: "60"
@@ -14,4 +14,4 @@ data:
   AZURE_OPENAI_REALTIME_DEPLOYMENT: "mira-gpt-realtime-mini"
   AZURE_OPENAI_REALTIME_VOICE: "alloy"
   HTTP_LISTEN_ADDR: ":8080"
-  LOG_LEVEL: "INFO"
+  LOG_LEVEL: "DEBUG"
