@@ -42,6 +42,7 @@ type Client struct {
 	pending sync.Map
 	writes  chan any
 	rx      chan conversation.Transmission
+	text    chan conversation.TextMessage
 	streams sync.Map
 
 	connected atomic.Bool
@@ -63,6 +64,7 @@ func NewClient(cfg Config, codec CodecFactory, resample audio.Resampler, logger 
 		metrics:  metrics,
 		writes:   make(chan any, 64),
 		rx:       make(chan conversation.Transmission, 16),
+		text:     make(chan conversation.TextMessage, 16),
 	}
 }
 
@@ -71,6 +73,8 @@ func (c *Client) Ready() bool {
 }
 
 func (c *Client) Transmissions() <-chan conversation.Transmission { return c.rx }
+
+func (c *Client) TextMessages() <-chan conversation.TextMessage { return c.text }
 
 func (c *Client) Run(ctx context.Context) error {
 	bo := backoff.New(time.Second, 30*time.Second)
@@ -310,11 +314,50 @@ func (c *Client) handleText(ctx context.Context, data []byte) error {
 			c.metrics.ErrorsTotal.Add(1)
 			c.logger.Warn("zello.rx_dropped", "reason", "transmission_queue_full")
 		}
+	case "on_text_message":
+		if event.Channel != c.cfg.Channel {
+			return nil
+		}
+		msg := conversation.TextMessage{
+			Channel:   event.Channel,
+			Speaker:   event.From,
+			MessageID: event.MessageID,
+			Text:      event.Text,
+			At:        time.Now(),
+		}
+		c.logger.Info("zello.text_received", "channel", msg.Channel, "speaker", msg.Speaker, "message_id", msg.MessageID)
+		select {
+		case c.text <- msg:
+		default:
+			c.metrics.ErrorsTotal.Add(1)
+			c.logger.Warn("zello.text_dropped", "reason", "text_queue_full")
+		}
 	case "on_error":
 		return fmt.Errorf("zello server error: %s", event.Error)
 	default:
 		_ = ctx
 	}
+	return nil
+}
+
+func (c *Client) TransmitText(ctx context.Context, text string) error {
+	c.txMu.Lock()
+	defer c.txMu.Unlock()
+	if len(text) > 30*1024 {
+		text = text[:30*1024]
+	}
+	msg := SendTextMessageRequest{
+		Command: "send_text_message",
+		Channel: c.cfg.Channel,
+		Text:    text,
+	}
+	select {
+	case c.writes <- msg:
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	c.metrics.TXTransmissionsTotal.Add(1)
+	c.logger.Info("zello.text_sent", "channel", c.cfg.Channel, "bytes", len(text))
 	return nil
 }
 

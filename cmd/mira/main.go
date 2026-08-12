@@ -94,6 +94,11 @@ func main() {
 					m.ErrorsTotal.Add(1)
 					logger.Error("conversation.handle_failed", "error", err, "speaker", t.Speaker)
 				}
+			case text := <-zelloClient.TextMessages():
+				if err := manager.HandleTextMessage(ctx, text); err != nil && !errors.Is(err, context.Canceled) {
+					m.ErrorsTotal.Add(1)
+					logger.Error("conversation.text_handle_failed", "error", err, "speaker", text.Speaker)
+				}
 			}
 		}
 	}()

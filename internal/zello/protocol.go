@@ -45,6 +45,13 @@ type StopStreamRequest struct {
 	Channel  string `json:"channel"`
 }
 
+type SendTextMessageRequest struct {
+	Command string `json:"command"`
+	Channel string `json:"channel"`
+	Text    string `json:"text"`
+	For     string `json:"for,omitempty"`
+}
+
 type Response struct {
 	Seq          uint32 `json:"seq"`
 	Success      bool   `json:"success"`
@@ -65,6 +72,8 @@ type Event struct {
 	StreamID            uint32          `json:"stream_id"`
 	From                string          `json:"from"`
 	For                 json.RawMessage `json:"for"`
+	MessageID           uint32          `json:"message_id"`
+	Text                string          `json:"text"`
 	Error               string          `json:"error"`
 	TranslationsEnabled bool            `json:"translations_enabled"`
 	Language            string          `json:"language"`

@@ -33,6 +33,7 @@ func (f *fakeAzureFactory) NewSession(context.Context) (AzureSession, error) {
 type fakeSession struct {
 	id     string
 	asks   int
+	texts  int
 	closed bool
 }
 
@@ -41,15 +42,26 @@ func (s *fakeSession) AskAudio(context.Context, []int16, int) ([]int16, int, err
 	s.asks++
 	return []int16{1, 2, 3}, audio.AzureSampleRate, nil
 }
+func (s *fakeSession) AskText(context.Context, string) (string, error) {
+	s.texts++
+	return "text reply", nil
+}
 func (s *fakeSession) Close(context.Context) error {
 	s.closed = true
 	return nil
 }
 
-type fakeTX struct{ count int }
+type fakeTX struct {
+	count     int
+	textCount int
+}
 
 func (t *fakeTX) TransmitPCM(context.Context, []int16, int) error {
 	t.count++
+	return nil
+}
+func (t *fakeTX) TransmitText(context.Context, string) error {
+	t.textCount++
 	return nil
 }
 
@@ -129,6 +141,54 @@ func TestGracefulConversationClose(t *testing.T) {
 	}
 	if got := m.Snapshot().State; got != StateIdle {
 		t.Fatalf("state = %s", got)
+	}
+}
+
+func TestTextActivationAndFollowupUseSameSession(t *testing.T) {
+	azure := &fakeAzureFactory{}
+	tx := &fakeTX{}
+	m := testManager(fakeDetector{result: wakeword.Result{}}, azure, tx)
+	if err := m.HandleTextMessage(context.Background(), TextMessage{Speaker: "alice", Text: "MIRA tell me a joke"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := m.Snapshot().State; got != StateActive {
+		t.Fatalf("state = %s", got)
+	}
+	if err := m.HandleTextMessage(context.Background(), TextMessage{Speaker: "alice", Text: "tell me another one"}); err != nil {
+		t.Fatal(err)
+	}
+	if azure.sessions != 1 {
+		t.Fatalf("sessions = %d", azure.sessions)
+	}
+	if azure.session.texts != 2 {
+		t.Fatalf("texts = %d", azure.session.texts)
+	}
+	if tx.textCount != 2 {
+		t.Fatalf("text replies = %d", tx.textCount)
+	}
+}
+
+func TestInactiveTextIgnored(t *testing.T) {
+	azure := &fakeAzureFactory{}
+	tx := &fakeTX{}
+	m := testManager(fakeDetector{result: wakeword.Result{}}, azure, tx)
+	if err := m.HandleTextMessage(context.Background(), TextMessage{Speaker: "alice", Text: "tell me a joke"}); err != nil {
+		t.Fatal(err)
+	}
+	if azure.sessions != 0 || tx.textCount != 0 {
+		t.Fatalf("unexpected sessions=%d replies=%d", azure.sessions, tx.textCount)
+	}
+}
+
+func TestSelfTextIgnored(t *testing.T) {
+	azure := &fakeAzureFactory{}
+	tx := &fakeTX{}
+	m := testManager(fakeDetector{result: wakeword.Result{}}, azure, tx)
+	if err := m.HandleTextMessage(context.Background(), TextMessage{Speaker: "mira-bot", Text: "MIRA tell me a joke"}); err != nil {
+		t.Fatal(err)
+	}
+	if azure.sessions != 0 {
+		t.Fatalf("sessions = %d", azure.sessions)
 	}
 }
 

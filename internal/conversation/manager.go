@@ -21,9 +21,18 @@ type Transmission struct {
 	EndedAt    time.Time
 }
 
+type TextMessage struct {
+	Channel   string
+	Speaker   string
+	MessageID uint32
+	Text      string
+	At        time.Time
+}
+
 type AzureSession interface {
 	ID() string
 	AskAudio(ctx context.Context, pcm []int16, sampleRate int) ([]int16, int, error)
+	AskText(ctx context.Context, text string) (string, error)
 	Close(ctx context.Context) error
 }
 
@@ -33,6 +42,7 @@ type AzureFactory interface {
 
 type Transmitter interface {
 	TransmitPCM(ctx context.Context, pcm []int16, sampleRate int) error
+	TransmitText(ctx context.Context, text string) error
 }
 
 type Manager struct {
@@ -108,31 +118,10 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		sendPCM = t.PCM
 	}
 
-	m.mu.Lock()
-	if m.conv.State == StateIdle {
-		m.conv.State = StateActivating
-		m.conv.Speaker = t.Speaker
-		m.conv.LastActivity = m.now()
-		m.logger.Info("conversation.started", "speaker", t.Speaker)
+	session, err := m.ensureSession(ctx, t.Speaker)
+	if err != nil {
+		return err
 	}
-	session := m.session
-	if session == nil {
-		var err error
-		session, err = m.azure.NewSession(ctx)
-		if err != nil {
-			m.conv.State = StateIdle
-			m.mu.Unlock()
-			return err
-		}
-		m.session = session
-		m.conv.SessionID = session.ID()
-		m.conv.State = StateActive
-		m.metrics.AzureSessionsTotal.Add(1)
-		m.metrics.ConversationActive.Store(1)
-		m.logger.Info("conversation.active", "session_id", session.ID())
-	}
-	m.conv.LastActivity = m.now()
-	m.mu.Unlock()
 
 	respPCM, respRate, err := session.AskAudio(ctx, sendPCM, sendRate)
 	if err != nil {
@@ -146,6 +135,57 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		return err
 	}
 
+	m.mu.Lock()
+	if m.conv.State == StateActive {
+		m.conv.LastActivity = m.now()
+	}
+	m.mu.Unlock()
+	return nil
+}
+
+func (m *Manager) HandleTextMessage(ctx context.Context, msg TextMessage) error {
+	if msg.Speaker == "" || msg.Speaker == m.botUsername {
+		m.logger.Info("zello.text_ignored", "speaker", msg.Speaker, "reason", "self_or_unknown")
+		return nil
+	}
+
+	m.mu.Lock()
+	state := m.conv.State
+	if state == StateActive && m.now().Sub(m.conv.LastActivity) > m.timeout {
+		m.expireLocked(ctx, "timeout")
+		state = StateIdle
+	}
+	m.mu.Unlock()
+
+	text := msg.Text
+	if state == StateIdle {
+		result := wakeword.MatchTranscript("MIRA,MEERA,MYRA,MIRAH,MEARA", msg.Text)
+		if !result.Activated {
+			m.logger.Info("wakeword.not_detected", "speaker", msg.Speaker, "input", "text")
+			return nil
+		}
+		m.metrics.WakeDetectionsTotal.Add(1)
+		if result.Query != "" {
+			text = result.Query
+		}
+		m.logger.Info("wakeword.detected", "speaker", msg.Speaker, "input", "text", "query", text)
+	}
+
+	session, err := m.ensureSession(ctx, msg.Speaker)
+	if err != nil {
+		return err
+	}
+	reply, err := session.AskText(ctx, text)
+	if err != nil {
+		m.End(ctx, "azure_error")
+		return err
+	}
+	if reply == "" {
+		return nil
+	}
+	if err := m.tx.TransmitText(ctx, reply); err != nil {
+		return err
+	}
 	m.mu.Lock()
 	if m.conv.State == StateActive {
 		m.conv.LastActivity = m.now()
@@ -170,6 +210,32 @@ func (m *Manager) RunExpiryLoop(ctx context.Context) {
 			m.mu.Unlock()
 		}
 	}
+}
+
+func (m *Manager) ensureSession(ctx context.Context, speaker string) (AzureSession, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.conv.State == StateIdle {
+		m.conv.State = StateActivating
+		m.conv.Speaker = speaker
+		m.conv.LastActivity = m.now()
+		m.logger.Info("conversation.started", "speaker", speaker)
+	}
+	if m.session == nil {
+		session, err := m.azure.NewSession(ctx)
+		if err != nil {
+			m.conv.State = StateIdle
+			return nil, err
+		}
+		m.session = session
+		m.conv.SessionID = session.ID()
+		m.conv.State = StateActive
+		m.metrics.AzureSessionsTotal.Add(1)
+		m.metrics.ConversationActive.Store(1)
+		m.logger.Info("conversation.active", "session_id", session.ID())
+	}
+	m.conv.LastActivity = m.now()
+	return m.session, nil
 }
 
 func (m *Manager) End(ctx context.Context, reason string) {

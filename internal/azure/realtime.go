@@ -52,6 +52,15 @@ type realtimeEvent struct {
 	Response json.RawMessage `json:"response"`
 }
 
+type responseDone struct {
+	Output []struct {
+		Content []struct {
+			Text       string `json:"text"`
+			Transcript string `json:"transcript"`
+		} `json:"content"`
+	} `json:"output"`
+}
+
 func newRealtimeSession(ctx context.Context, cfg Config, cred azcore.TokenCredential, resampler audio.Resampler, logger *slog.Logger) (*RealtimeSession, error) {
 	logger.Info("azure.connecting", "deployment", cfg.Deployment)
 	token, err := cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: []string{TokenScope}})
@@ -129,6 +138,7 @@ func (s *RealtimeSession) AskAudio(ctx context.Context, pcm []int16, sampleRate 
 			return nil, 0, err
 		}
 	}
+
 	if err := s.sendJSON(map[string]any{"type": "input_audio_buffer.commit"}); err != nil {
 		return nil, 0, err
 	}
@@ -167,6 +177,65 @@ func (s *RealtimeSession) AskAudio(ctx context.Context, pcm []int16, sampleRate 
 			}
 		case <-time.After(60 * time.Second):
 			return nil, 0, errors.New("azure realtime response timed out")
+		}
+	}
+}
+
+func (s *RealtimeSession) AskText(ctx context.Context, text string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if strings.TrimSpace(text) == "" {
+		return "", nil
+	}
+	if err := s.sendJSON(map[string]any{
+		"type": "conversation.item.create",
+		"item": map[string]any{
+			"type": "message",
+			"role": "user",
+			"content": []map[string]any{{
+				"type": "input_text",
+				"text": text,
+			}},
+		},
+	}); err != nil {
+		return "", err
+	}
+	if err := s.sendJSON(map[string]any{
+		"type": "response.create",
+		"response": map[string]any{
+			"modalities": []string{"text"},
+		},
+	}); err != nil {
+		return "", err
+	}
+	s.logger.Info("azure.text_response_started", "session_id", s.id)
+	var out strings.Builder
+	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case ev, ok := <-s.events:
+			if !ok {
+				return "", errors.New("azure realtime session closed")
+			}
+			switch ev.Type {
+			case "response.output_text.delta", "response.text.delta":
+				out.WriteString(ev.Delta)
+			case "response.done":
+				if out.Len() == 0 {
+					out.WriteString(extractResponseText(ev.Response))
+				}
+				reply := strings.TrimSpace(out.String())
+				s.logger.Info("azure.text_response_finished", "session_id", s.id, "bytes", len(reply))
+				return reply, nil
+			case "error":
+				if ev.Error != nil {
+					return "", fmt.Errorf("azure realtime error: %s", ev.Error.Message)
+				}
+				return "", errors.New("azure realtime error")
+			}
+		case <-time.After(60 * time.Second):
+			return "", errors.New("azure realtime text response timed out")
 		}
 	}
 }
@@ -268,4 +337,25 @@ func (s *RealtimeSession) readLoop() {
 
 func (s *RealtimeSession) sendJSON(v any) error {
 	return s.conn.WriteJSON(v)
+}
+
+func extractResponseText(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var done responseDone
+	if err := json.Unmarshal(raw, &done); err != nil {
+		return ""
+	}
+	var out strings.Builder
+	for _, item := range done.Output {
+		for _, content := range item.Content {
+			if content.Text != "" {
+				out.WriteString(content.Text)
+			} else if content.Transcript != "" {
+				out.WriteString(content.Transcript)
+			}
+		}
+	}
+	return out.String()
 }
