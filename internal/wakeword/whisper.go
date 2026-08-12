@@ -35,7 +35,7 @@ func (d *WhisperDetector) Detect(ctx context.Context, pcm []int16, sampleRate in
 	if err != nil {
 		return Result{}, err
 	}
-	if err := wctx.Process(floatPCM, nil, nil); err != nil {
+	if err := wctx.Process(floatPCM, nil, nil, nil); err != nil {
 		return Result{}, err
 	}
 	var b strings.Builder

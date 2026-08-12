@@ -29,7 +29,7 @@ MIRA is a headless Go voice bot for a private Zello Friends & Family channel. It
 - an AKS cluster with outbound internet access
 - an Azure OpenAI or Foundry resource with a deployed Realtime model such as `gpt-realtime`
 - a dedicated Zello Friends & Family account for MIRA
-- a whisper.cpp model, for example `ggml-tiny.en.bin`
+- a whisper.cpp model, for example `ggml-tiny.en.bin`; the supplied Dockerfile bakes `tiny.en` into `/models/ggml-tiny.en.bin`
 
 ## Zello setup
 
@@ -150,7 +150,7 @@ HTTP_LISTEN_ADDR=:8080
 LOG_LEVEL=INFO
 ```
 
-Secrets must stay outside the image and outside git. Use `k8s/secret.example.yaml` only as a template.
+Secrets must stay outside the image and outside git. Use `k8s/secret.example.yaml.sample` only as a template. It intentionally does not use a `.yaml` extension so `kubectl apply -f k8s/` cannot overwrite the real Secret with placeholders.
 
 ## Build and test locally
 
@@ -210,8 +210,7 @@ kubectl create secret generic mira-zello \
   --from-literal=ZELLO_AUTH_TOKEN="$ZELLO_AUTH_TOKEN"
 ```
 
-5. Mount the Whisper model at `/models/ggml-tiny.en.bin`. The sample manifest expects a PVC named `mira-whisper-model`; replace that volume with your preferred deterministic model delivery path if your cluster uses Azure Files, Blob CSI, or a pre-baked model image.
-6. Deploy:
+5. Deploy. The default Dockerfile bakes the Whisper model into the image at `/models/ggml-tiny.en.bin`; if you change to mounted models later, update `MIRA_WHISPER_MODEL_PATH` and the Deployment volume.
 
 ```bash
 kubectl apply -f k8s/
@@ -250,7 +249,7 @@ curl http://127.0.0.1:8080/metrics
 
 ## Known limitations
 
-- The Kubernetes sample leaves Whisper model distribution to the operator; mount a deterministic model or bake it into a derived image.
+- The default image bakes the `tiny.en` Whisper model, increasing image size but making pod startup deterministic. Use a mounted model if you need to swap models without rebuilding.
 - The checked-in default build excludes native `opus` and `whisper` tags so CI/unit tests can run without native libraries. The Dockerfile builds the production native path.
 - If an Azure Realtime WebSocket fails during an active conversation, MIRA ends that conversation and requires the wake word again rather than pretending context was preserved.
 - The resampler abstraction is intentionally isolated. The default Go implementation is suitable for the proof of concept; replace it with a high-quality native SRC library if radio/audio quality requires it.
