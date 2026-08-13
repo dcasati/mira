@@ -72,7 +72,23 @@ func (r *ToolRunner) Run(ctx context.Context, name, arguments string) (string, e
 
 func routeQuestion(question string) string {
 	lower := strings.ToLower(question)
-	if containsAny(lower, []string{
+	if IsOperationalQuestion(question) {
+		if isAsset004EventQuestion(lower) {
+			return "Using Fabric IQ/operator-matrix-agent data, what events are recorded for ASSET-004?"
+		}
+		if isMissionOneQuestion(lower) {
+			return "Using Fabric IQ/operator-matrix-agent data, what is Mission 1?"
+		}
+		return "Using Fabric IQ operator-matrix-agent data and the operator_events, simulation_assets, missions, mission_events, call_signs, and operator_mission_manual tables, " +
+			"answer this. Mappings: relay hardline=ASSET-004; Mission 1=MISSION-001; Bravo=ASSET-002; Charlie=ASSET-003. " +
+			question
+	}
+	return question
+}
+
+func IsOperationalQuestion(question string) bool {
+	lower := strings.ToLower(question)
+	return containsAny(lower, []string{
 		"fabric iq",
 		"asset-",
 		"asset ",
@@ -97,18 +113,7 @@ func routeQuestion(question string) string {
 		"sierra 1",
 		"echo 2",
 		"proword",
-	}) {
-		if isAsset004EventQuestion(lower) {
-			return "Using Fabric IQ/operator-matrix-agent data, what events are recorded for ASSET-004?"
-		}
-		if isMissionOneQuestion(lower) {
-			return "Using Fabric IQ/operator-matrix-agent data, what is Mission 1?"
-		}
-		return "Using Fabric IQ operator-matrix-agent data and the operator_events, simulation_assets, missions, mission_events, call_signs, and operator_mission_manual tables, " +
-			"answer this. Mappings: relay hardline=ASSET-004; Mission 1=MISSION-001; Bravo=ASSET-002; Charlie=ASSET-003. " +
-			question
-	}
-	return question
+	})
 }
 
 func isAsset004EventQuestion(value string) bool {

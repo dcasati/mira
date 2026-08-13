@@ -19,6 +19,12 @@ func (fakeCredential) GetToken(context.Context, policy.TokenRequestOptions) (azc
 	return azcore.AccessToken{Token: "test-token", ExpiresOn: time.Now().Add(time.Hour)}, nil
 }
 
+type failingCredential struct{}
+
+func (failingCredential) GetToken(context.Context, policy.TokenRequestOptions) (azcore.AccessToken, error) {
+	panic("credential should not be used")
+}
+
 func TestQueryCallsFoundryResponsesWithAgentReference(t *testing.T) {
 	var gotPath, gotAuth, gotBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +63,145 @@ func TestConfigRequiresProjectAndAgent(t *testing.T) {
 	_, err := NewClient(Config{ProjectEndpoint: "https://example.test"}, fakeCredential{})
 	if err == nil {
 		t.Fatal("expected validation error")
+	}
+}
+
+func TestQueryFabricKnowledgeBaseUsesDelegatedQuerySourceToken(t *testing.T) {
+	var gotPath, gotQuerySourceAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotQuerySourceAuth = r.Header.Get("x-ms-query-source-authorization")
+		_, _ = w.Write([]byte(`{"response":[{"content":[{"type":"text","text":"ASSET-004 has two events."}]}]}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{
+		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
+		AgentName:           "manuals-agent",
+		SearchEndpoint:      server.URL,
+		SearchAPIKey:        "search-key",
+		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
+		QuerySourceToken:    "Bearer delegated-token",
+	}, failingCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := client.Query(context.Background(), "What events are recorded for ASSET-004?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/knowledgebases('ks-fabriciq-operator-matrix')/retrieve" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if gotQuerySourceAuth != "delegated-token" {
+		t.Fatalf("query source auth = %q", gotQuerySourceAuth)
+	}
+	if result.Answer != "ASSET-004 has two events." {
+		t.Fatalf("answer = %q", result.Answer)
+	}
+}
+
+func TestQueryFallsBackToDirectFabricKnowledgeBaseWhenAgentCannotForwardQuerySourceAuth(t *testing.T) {
+	var gotAgentPath, gotDirectPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/openai/v1/responses":
+			gotAgentPath = r.URL.Path
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":{"message":"No usable knowledge sources are available. Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty."}}`))
+		case strings.HasPrefix(r.URL.Path, "/knowledgebases("):
+			gotDirectPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"response":[{"content":[{"type":"text","text":"Mission 1 is a relay hardline check."}]}]}`))
+		default:
+			t.Fatalf("unexpected path %q", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{
+		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
+		AgentName:           "manuals-agent",
+		SearchEndpoint:      server.URL,
+		SearchAPIKey:        "search-key",
+		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
+		QuerySourceToken:    "delegated-token",
+	}, fakeCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.cfg.ProjectEndpoint = server.URL
+	result, err := client.Query(context.Background(), "How do I calibrate the operator handset?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotAgentPath != "/openai/v1/responses" {
+		t.Fatalf("agent path = %q", gotAgentPath)
+	}
+	if gotDirectPath != "/knowledgebases('ks-fabriciq-operator-matrix')/retrieve" {
+		t.Fatalf("direct path = %q", gotDirectPath)
+	}
+	if result.Answer != "Mission 1 is a relay hardline check." {
+		t.Fatalf("answer = %q", result.Answer)
+	}
+}
+
+func TestQueryUsesPOCFallbackWhenFabricDataAgentFails(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/knowledgebases(") {
+			t.Fatalf("unexpected path %q", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`{"error":{"message":"All retrieval tasks failed. Failures:\r\n Knowledge source 'ks-fabriciq-operator-matrix-v2': Failed to connect to Fabric Data Agent 'WorkspaceId: workspace, DataAgentId: agent' due to unexpected error. Please contact support if the issue persists"}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{
+		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
+		AgentName:           "manuals-agent",
+		SearchEndpoint:      server.URL,
+		SearchAPIKey:        "search-key",
+		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
+		QuerySourceToken:    "delegated-token",
+	}, failingCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := client.Query(context.Background(), "What happened on the relay hardline?")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.AgentName != "operator-matrix-poc" {
+		t.Fatalf("agent = %q", result.AgentName)
+	}
+	if !strings.Contains(result.Answer, "EVT-004") || !strings.Contains(result.Answer, "EVT-006") {
+		t.Fatalf("answer missing fallback events: %s", result.Answer)
+	}
+}
+
+func TestQueryDoesNotFallbackForFabricAuthorizationErrors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":{"message":"Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty."}}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{
+		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
+		AgentName:           "manuals-agent",
+		SearchEndpoint:      server.URL,
+		SearchAPIKey:        "search-key",
+		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
+		QuerySourceToken:    "delegated-token",
+	}, failingCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.Query(context.Background(), "What happened on the relay hardline?")
+	if err == nil {
+		t.Fatal("expected auth error")
+	}
+	if strings.Contains(err.Error(), "Fabric IQ POC fallback") {
+		t.Fatalf("unexpected fallback error: %v", err)
 	}
 }
 

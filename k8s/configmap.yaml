@@ -26,5 +26,7 @@ data:
   FOUNDRY_IQ_AGENT_NAME: "operator-manuals"
   FOUNDRY_IQ_MODEL: "gpt-5-mini"
   FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
+  FOUNDRY_IQ_SEARCH_ENDPOINT: "https://search-openai-demo.search.windows.net"
+  FOUNDRY_IQ_FABRIC_KB: "ks-fabriciq-operator-matrix"
   HTTP_LISTEN_ADDR: ":8080"
   LOG_LEVEL: "DEBUG"

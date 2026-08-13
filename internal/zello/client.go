@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,6 +17,11 @@ import (
 	"github.com/dcasati/mira/internal/conversation"
 	"github.com/dcasati/mira/internal/metrics"
 	"github.com/gorilla/websocket"
+)
+
+const (
+	txStartAttempts = 3
+	txStartBackoff  = 1500 * time.Millisecond
 )
 
 type Config struct {
@@ -397,19 +403,9 @@ func (c *Client) TransmitPCM(ctx context.Context, pcm []int16, sampleRate int) e
 		return err
 	}
 	defer encoder.Close()
-	resp, err := c.call(ctx, &StartStreamRequest{
-		Command:        "start_stream",
-		Channel:        c.cfg.Channel,
-		Type:           "audio",
-		Codec:          "opus",
-		CodecHeader:    MakeCodecHeader(audio.ZelloSampleRate, 1, audio.PacketMS),
-		PacketDuration: audio.PacketMS,
-	})
+	resp, err := c.startTransmitStream(ctx)
 	if err != nil {
 		return err
-	}
-	if resp.Error != "" || resp.StreamID == 0 {
-		return fmt.Errorf("zello start_stream failed: %s", resp.Error)
 	}
 	c.logger.Info("zello.tx_started", "stream_id", resp.StreamID)
 	samplesPerPacket := audio.ZelloSampleRate * audio.PacketMS / 1000
@@ -440,4 +436,37 @@ func (c *Client) TransmitPCM(ctx context.Context, pcm []int16, sampleRate int) e
 	c.metrics.TXTransmissionsTotal.Add(1)
 	c.logger.Info("zello.tx_finished", "stream_id", resp.StreamID)
 	return nil
+}
+
+func (c *Client) startTransmitStream(ctx context.Context) (Response, error) {
+	for attempt := 1; attempt <= txStartAttempts; attempt++ {
+		resp, err := c.call(ctx, &StartStreamRequest{
+			Command:        "start_stream",
+			Channel:        c.cfg.Channel,
+			Type:           "audio",
+			Codec:          "opus",
+			CodecHeader:    MakeCodecHeader(audio.ZelloSampleRate, 1, audio.PacketMS),
+			PacketDuration: audio.PacketMS,
+		})
+		if err != nil {
+			return Response{}, err
+		}
+		if resp.Error == "" && resp.StreamID != 0 {
+			return resp, nil
+		}
+		if !isWoodpeckerProhibited(resp.Error) || attempt == txStartAttempts {
+			return Response{}, fmt.Errorf("zello start_stream failed: %s", resp.Error)
+		}
+		c.logger.Warn("zello.tx_start_retry", "reason", resp.Error, "attempt", attempt+1, "retry_in_ms", txStartBackoff.Milliseconds())
+		select {
+		case <-time.After(txStartBackoff):
+		case <-ctx.Done():
+			return Response{}, ctx.Err()
+		}
+	}
+	return Response{}, errors.New("zello start_stream failed")
+}
+
+func isWoodpeckerProhibited(err string) bool {
+	return strings.Contains(strings.ToLower(err), "woodpecker prohibited")
 }

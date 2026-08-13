@@ -28,11 +28,13 @@ FOUNDRY_IQ_AGENT_NAME: "operator-manuals"
 FOUNDRY_IQ_MODEL: "gpt-5-mini"
 FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
 MIRA_LOOKUP_FILLER: "Hold on."
+FOUNDRY_IQ_SEARCH_ENDPOINT: "https://search-openai-demo.search.windows.net"
+FOUNDRY_IQ_FABRIC_KB: "ks-fabriciq-operator-matrix"
 ```
 
 MIRA's AKS workload identity has `Foundry User` on the Foundry project scope.
 
-For Fabric IQ knowledge sources, MIRA also sends `x-ms-query-source-authorization` with a `https://search.azure.com/.default` token. The MIRA workload identity must have access to the Fabric workspace so query-time ACL/RBAC checks can authorize Fabric IQ retrieval.
+For Fabric IQ knowledge sources, MIRA calls the dedicated Azure AI Search knowledge base retrieve endpoint directly for operational questions. It sends `x-ms-query-source-authorization` with a `https://search.azure.com/.default` token and uses the Search API key from Kubernetes secret `mira-foundry`.
 
 Current Fabric workspace assignment:
 
@@ -183,7 +185,7 @@ Result:
 Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty
 ```
 
-The same Fabric IQ query works in the Foundry playground under the signed-in user. For production, use a supported delegated-user flow or separate direct Fabric/Fabric data-agent access when a public API supports it. For this POC, manual questions continue through Foundry Knowledge; Fabric operational queries are reliable in the Foundry playground but may fail from MIRA's app-only identity until this preview auth path supports delegated query-source authorization.
+The same Fabric IQ query works in the Foundry playground under the signed-in user. For this POC, MIRA bypasses that limitation for operational questions by calling the dedicated Fabric IQ knowledge base (`ks-fabriciq-operator-matrix`) directly through Azure AI Search retrieve API. Manual questions still use the `operator-manuals` Foundry agent path.
 
 ## Radio operator behavior
 

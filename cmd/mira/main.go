@@ -102,10 +102,14 @@ func main() {
 			os.Exit(1)
 		}
 		foundryIQClient, err := foundryiq.NewClient(foundryiq.Config{
-			ProjectEndpoint: cfg.FoundryProjectEndpoint,
-			AgentName:       cfg.FoundryIQAgentName,
-			Model:           cfg.FoundryIQModel,
-			MaxOutputChars:  cfg.FoundryIQMaxOutputChars,
+			ProjectEndpoint:     cfg.FoundryProjectEndpoint,
+			AgentName:           cfg.FoundryIQAgentName,
+			Model:               cfg.FoundryIQModel,
+			MaxOutputChars:      cfg.FoundryIQMaxOutputChars,
+			SearchEndpoint:      cfg.FoundryIQSearchEndpoint,
+			SearchAPIKey:        cfg.FoundryIQSearchAPIKey,
+			FabricKnowledgeBase: cfg.FoundryIQFabricKB,
+			QuerySourceToken:    cfg.FoundryIQQuerySourceToken,
 		}, cred)
 		if err != nil {
 			logger.Error("foundry_iq.config_failed", "error", err)

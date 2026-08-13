@@ -38,10 +38,14 @@ type Config struct {
 	TelemetryDefaultLookback time.Duration
 	TelemetryMaxRows         int
 
-	FoundryProjectEndpoint  string
-	FoundryIQAgentName      string
-	FoundryIQModel          string
-	FoundryIQMaxOutputChars int
+	FoundryProjectEndpoint    string
+	FoundryIQAgentName        string
+	FoundryIQModel            string
+	FoundryIQMaxOutputChars   int
+	FoundryIQSearchEndpoint   string
+	FoundryIQSearchAPIKey     string
+	FoundryIQFabricKB         string
+	FoundryIQQuerySourceToken string
 
 	HTTPListenAddr string
 	LogLevel       slog.Level
@@ -76,6 +80,10 @@ func Load() (Config, error) {
 		FoundryIQAgentName:            os.Getenv("FOUNDRY_IQ_AGENT_NAME"),
 		FoundryIQModel:                os.Getenv("FOUNDRY_IQ_MODEL"),
 		FoundryIQMaxOutputChars:       intEnv("FOUNDRY_IQ_MAX_OUTPUT_CHARS", 6000),
+		FoundryIQSearchEndpoint:       os.Getenv("FOUNDRY_IQ_SEARCH_ENDPOINT"),
+		FoundryIQSearchAPIKey:         os.Getenv("FOUNDRY_IQ_SEARCH_API_KEY"),
+		FoundryIQFabricKB:             env("FOUNDRY_IQ_FABRIC_KB", "ks-fabriciq-operator-matrix"),
+		FoundryIQQuerySourceToken:     os.Getenv("FOUNDRY_IQ_QUERY_SOURCE_TOKEN"),
 		HTTPListenAddr:                env("HTTP_LISTEN_ADDR", ":8080"),
 		LogLevel:                      parseLogLevel(env("LOG_LEVEL", "INFO")),
 	}
