@@ -13,7 +13,7 @@ data:
   AZURE_OPENAI_ENDPOINT: "https://instance-openai-dc.openai.azure.com"
   AZURE_OPENAI_REALTIME_DEPLOYMENT: "mira-gpt-realtime-mini"
   AZURE_OPENAI_REALTIME_VOICE: "echo"
-  MIRA_LOOKUP_FILLER: "Hold on."
+  MIRA_LOOKUP_FILLER: "Standby."
   # POC telemetry tools are disabled until these three Fabric/Eventhouse values are set.
   # FABRIC_KQL_ENDPOINT: "https://<eventhouse-cluster>.kusto.fabric.microsoft.com"
   # FABRIC_KQL_DATABASE: "<kql-database-name>"

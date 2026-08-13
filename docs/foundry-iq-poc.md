@@ -2,6 +2,67 @@
 
 MIRA uses Azure OpenAI Realtime for the live Zello conversation and calls a separate Foundry IQ tool when Operator needs grounded manual or procedure answers.
 
+## Solution sequence
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Worker
+  participant Zello as Zello Channel API
+  box AKS cluster
+    participant MIRA as MIRA gateway pod
+    participant Whisper as Local Whisper wake detection
+    participant Identity as AKS Workload Identity
+  end
+  box Azure AI Foundry
+    participant Realtime as Azure OpenAI Realtime
+    participant FoundryIQ as Foundry IQ<br/>operator-manuals agent + kb-zavatrix
+  end
+  box Microsoft Fabric
+    participant FabricIQ as Fabric IQ<br/>operator matrix data + ontology
+  end
+
+  Worker->>Zello: Push-to-talk question
+  Zello->>MIRA: Opus audio stream
+  MIRA->>MIRA: Assemble, decode, and resample audio
+  MIRA->>Whisper: Detect Operator wake word
+  Whisper-->>MIRA: Activation and transcript
+
+  alt Wake word not detected while idle
+    MIRA-->>Zello: Ignore transmission
+  else Activated or conversation already active
+    MIRA->>Identity: Request AI token
+    Identity-->>MIRA: Entra access token
+    MIRA->>Realtime: Open or reuse session and send PCM audio
+    Realtime-->>MIRA: query_foundry_iq_manuals(question)
+    MIRA->>Zello: Speak "Standby."
+
+    alt Operational Fabric IQ question
+      MIRA->>Identity: Request Search query-source token
+      Identity-->>MIRA: Fresh Search access token
+      MIRA->>FabricIQ: Retrieve operational data via Azure AI Search<br/>API key + query-source token
+      FabricIQ-->>MIRA: Grounded asset, mission, or event answer
+    else Manual or procedure Foundry IQ question
+      MIRA->>Identity: Request Foundry and query-source tokens
+      Identity-->>MIRA: Fresh Entra access tokens
+      MIRA->>FoundryIQ: Responses API with agent_reference
+      FoundryIQ->>FoundryIQ: Retrieve manual content from vector store
+      FoundryIQ-->>MIRA: Grounded manual answer
+    end
+
+    MIRA->>Realtime: Return function result
+    Realtime-->>MIRA: Concise synthesized response audio
+    opt Worker requested details in chat
+      Realtime-->>MIRA: send_zello_chat_message(text)
+      MIRA->>Zello: Post text to current channel
+    end
+    MIRA->>Zello: Transmit response audio
+    Zello-->>Worker: Play Operator response
+  end
+```
+
+The operational path calls the Azure AI Search knowledge-base retrieve endpoint directly so it can supply fresh query-source authorization. The manual path uses the published `operator-manuals` Foundry agent and its attached `kb-zavatrix` knowledge base.
+
 ## Created resources
 
 | Resource | Value |
@@ -30,7 +91,7 @@ FOUNDRY_PROJECT_ENDPOINT: "https://admin-2434-resource.services.ai.azure.com/api
 FOUNDRY_IQ_AGENT_NAME: "operator-manuals"
 FOUNDRY_IQ_MODEL: "gpt-5-mini"
 FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
-MIRA_LOOKUP_FILLER: "Hold on."
+MIRA_LOOKUP_FILLER: "Standby."
 FOUNDRY_IQ_SEARCH_ENDPOINT: "https://search-openai-demo.search.windows.net"
 FOUNDRY_IQ_FABRIC_KB: "ks-fabriciq-operator-matrix"
 ```
@@ -192,7 +253,7 @@ Operator, look up the radio setup procedure and send it in chat.
 
 Operator should call `query_foundry_iq_manuals` before answering manual, procedure, maintenance, troubleshooting, error-code, or documented-spec questions.
 
-When Operator decides to use Foundry IQ, it first says the configured filler phrase (`Hold on.` by default), then runs the lookup and speaks the grounded answer.
+When Operator decides to use Foundry IQ, it first says the configured filler phrase (`Standby.` by default), then runs the lookup and speaks a concise grounded answer.
 
 If the worker explicitly asks to send instructions in chat, Operator can call `send_zello_chat_message`. That posts concise text to the current Zello channel using the same Zello account.
 
@@ -281,7 +342,9 @@ status=502
 Failed to connect to Fabric Data Agent
 ```
 
-MIRA treats 502/503/429 and Fabric data-agent backend connection errors as transient. For known POC demo questions such as ASSET-004 and Mission 1, it returns a local POC fallback answer rather than failing the radio exchange.
+This means Azure AI Search reached the Fabric IQ knowledge source, but the downstream Fabric data-agent service failed. It is not a Zello issue and not the original missing-token issue.
+
+MIRA treats 502/503/429 and Fabric data-agent backend connection errors as transient and retries with backoff. If all retries fail, MIRA surfaces a concise service-unavailable response instead of returning hardcoded data. Customer implementations should not hardcode Fabric IQ answers; they should either retry, fail cleanly, or use a deterministic SQL/KQL tool for critical operational queries.
 
 ## Radio operator behavior
 

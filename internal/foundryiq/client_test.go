@@ -145,11 +145,13 @@ func TestQueryFallsBackToDirectFabricKnowledgeBaseWhenAgentCannotForwardQuerySou
 	}
 }
 
-func TestQueryUsesPOCFallbackWhenFabricDataAgentFails(t *testing.T) {
+func TestQueryRetriesAndReturnsErrorWhenFabricDataAgentFails(t *testing.T) {
+	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/knowledgebases(") {
 			t.Fatalf("unexpected path %q", r.URL.Path)
 		}
+		calls++
 		w.WriteHeader(http.StatusBadGateway)
 		_, _ = w.Write([]byte(`{"error":{"message":"All retrieval tasks failed. Failures:\r\n Knowledge source 'ks-fabriciq-operator-matrix-v2': Failed to connect to Fabric Data Agent 'WorkspaceId: workspace, DataAgentId: agent' due to unexpected error. Please contact support if the issue persists"}}`))
 	}))
@@ -166,15 +168,15 @@ func TestQueryUsesPOCFallbackWhenFabricDataAgentFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := client.Query(context.Background(), "What happened on the relay hardline?")
-	if err != nil {
-		t.Fatal(err)
+	_, err = client.Query(context.Background(), "What happened on the relay hardline?")
+	if err == nil {
+		t.Fatal("expected Fabric data agent error")
 	}
-	if result.AgentName != "operator-matrix-poc" {
-		t.Fatalf("agent = %q", result.AgentName)
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3", calls)
 	}
-	if !strings.Contains(result.Answer, "EVT-004") || !strings.Contains(result.Answer, "EVT-006") {
-		t.Fatalf("answer missing fallback events: %s", result.Answer)
+	if !strings.Contains(err.Error(), "Failed to connect to Fabric Data Agent") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

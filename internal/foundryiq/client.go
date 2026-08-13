@@ -81,6 +81,27 @@ func (c *Client) directFabricEnabled() bool {
 }
 
 func (c *Client) queryFabricKnowledgeBase(ctx context.Context, question string) (QueryResult, error) {
+	var lastErr error
+	for attempt := 1; attempt <= 3; attempt++ {
+		result, err := c.queryFabricKnowledgeBaseOnce(ctx, question)
+		if err == nil {
+			return result, nil
+		}
+		lastErr = err
+		if !isFabricDataAgentTransient(err) || attempt == 3 {
+			break
+		}
+		delay := time.Duration(attempt) * 750 * time.Millisecond
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return QueryResult{}, ctx.Err()
+		}
+	}
+	return QueryResult{}, lastErr
+}
+
+func (c *Client) queryFabricKnowledgeBaseOnce(ctx context.Context, question string) (QueryResult, error) {
 	querySourceAuth, err := c.querySourceAuthorization(ctx)
 	if err != nil {
 		return QueryResult{}, err
@@ -209,24 +230,12 @@ func (c *Client) Query(ctx context.Context, question string) (QueryResult, error
 	}
 	if c.directFabricEnabled() && IsOperationalQuestion(question) {
 		routed := routeQuestion(question)
-		result, err := c.queryFabricKnowledgeBase(ctx, routed)
-		if err != nil && isFabricDataAgentTransient(err) {
-			if fallback, ok := pocOperationalFallback(routed); ok {
-				return fallback, nil
-			}
-		}
-		return result, err
+		return c.queryFabricKnowledgeBase(ctx, routed)
 	}
 	result, err := c.queryFoundryAgent(ctx, question)
 	if err != nil && c.directFabricEnabled() && isQuerySourceAuthorizationBlocked(err) {
 		routed := routeQuestion(question)
-		result, err := c.queryFabricKnowledgeBase(ctx, routed)
-		if err != nil && isFabricDataAgentTransient(err) {
-			if fallback, ok := pocOperationalFallback(routed); ok {
-				return fallback, nil
-			}
-		}
-		return result, err
+		return c.queryFabricKnowledgeBase(ctx, routed)
 	}
 	return result, err
 }
@@ -300,33 +309,6 @@ func isFabricDataAgentTransient(err error) bool {
 			strings.Contains(msg, "failed to connect") ||
 			strings.Contains(msg, "unexpected error") ||
 			strings.Contains(msg, "all retrieval tasks failed"))
-}
-
-func pocOperationalFallback(question string) (QueryResult, bool) {
-	lower := strings.ToLower(question)
-	switch {
-	case isAsset004EventQuestion(lower):
-		return QueryResult{
-			AgentName: "operator-matrix-poc",
-			Answer: "Fabric IQ POC fallback: ASSET-004 is the Relay Hardline in the Backbone zone. Two events are recorded: " +
-				"EVT-004 at 14:12Z from Echo 2 reported signal_degradation with relay hardline packet loss above threshold; " +
-				"EVT-006 at 14:20Z from Echo 2 reported reset_complete with signal restored.",
-		}, true
-	case containsAny(lower, []string{"mission-002", "mission 002", "mission two", "relay hardline recovery"}):
-		return QueryResult{
-			AgentName: "operator-matrix-poc",
-			Answer: "Fabric IQ POC fallback: MISSION-002 is Relay Hardline Recovery. Objective: restore the degraded relay hardline and confirm signal stability. " +
-				"It is assigned to Echo 2, targets ASSET-004, uses PROC-004, and is marked complete.",
-		}, true
-	case isMissionOneQuestion(lower):
-		return QueryResult{
-			AgentName: "operator-matrix-poc",
-			Answer: "Fabric IQ POC fallback: MISSION-001 is Bravo to Charlie Advance. Objective: move Sierra 1 from checkpoint Bravo to checkpoint Charlie after secure status is confirmed. " +
-				"It is active, assigned to Sierra 1, targets ASSET-002 and ASSET-003, and includes EVT-002 status_report plus EVT-003 movement_order.",
-		}, true
-	default:
-		return QueryResult{}, false
-	}
 }
 
 func (c *Client) querySourceAuthorization(ctx context.Context) (string, error) {

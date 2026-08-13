@@ -22,6 +22,7 @@ import (
 const (
 	txStartAttempts = 3
 	txStartBackoff  = 1500 * time.Millisecond
+	txMinSpacing    = 2 * time.Second
 )
 
 type Config struct {
@@ -55,6 +56,7 @@ type Client struct {
 	joined    atomic.Bool
 	rxActive  atomic.Int64
 	txMu      sync.Mutex
+	lastTxAt  time.Time
 }
 
 type pendingCall struct {
@@ -349,6 +351,9 @@ func (c *Client) handleText(ctx context.Context, data []byte) error {
 func (c *Client) TransmitText(ctx context.Context, text string) error {
 	c.txMu.Lock()
 	defer c.txMu.Unlock()
+	if err := c.waitTXSpacing(ctx); err != nil {
+		return err
+	}
 	if len(text) > 30*1024 {
 		text = text[:30*1024]
 	}
@@ -363,6 +368,7 @@ func (c *Client) TransmitText(ctx context.Context, text string) error {
 		return ctx.Err()
 	}
 	c.metrics.TXTransmissionsTotal.Add(1)
+	c.lastTxAt = time.Now()
 	c.logger.Info("zello.text_sent", "channel", c.cfg.Channel, "bytes", len(text))
 	return nil
 }
@@ -382,6 +388,9 @@ func (c *Client) handleBinary(_ context.Context, data []byte) error {
 func (c *Client) TransmitPCM(ctx context.Context, pcm []int16, sampleRate int) error {
 	c.txMu.Lock()
 	defer c.txMu.Unlock()
+	if err := c.waitTXSpacing(ctx); err != nil {
+		return err
+	}
 	for c.rxActive.Load() > 0 {
 		c.logger.Info("zello.tx_waiting", "reason", "channel_busy")
 		select {
@@ -434,8 +443,26 @@ func (c *Client) TransmitPCM(ctx context.Context, pcm []int16, sampleRate int) e
 		return fmt.Errorf("zello stop_stream failed: %s", stopResp.Error)
 	}
 	c.metrics.TXTransmissionsTotal.Add(1)
+	c.lastTxAt = time.Now()
 	c.logger.Info("zello.tx_finished", "stream_id", resp.StreamID)
 	return nil
+}
+
+func (c *Client) waitTXSpacing(ctx context.Context) error {
+	if c.lastTxAt.IsZero() {
+		return nil
+	}
+	wait := txMinSpacing - time.Since(c.lastTxAt)
+	if wait <= 0 {
+		return nil
+	}
+	c.logger.Info("zello.tx_spacing", "wait_ms", wait.Milliseconds())
+	select {
+	case <-time.After(wait):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (c *Client) startTransmitStream(ctx context.Context) (Response, error) {
