@@ -20,7 +20,10 @@ The sanitized upload excludes the credential/login section from `FieldNotes.md`.
 
 ## Runtime configuration
 
-`k8s/configmap.yaml` enables Foundry IQ with:
+`k8s/configmap.yaml` enables two retrieval paths:
+
+1. Manual/document questions go through the Foundry `operator-manuals` agent.
+2. Operational Fabric IQ questions bypass `agent_reference` and call the dedicated Azure AI Search knowledge-base retrieve endpoint directly.
 
 ```yaml
 FOUNDRY_PROJECT_ENDPOINT: "https://admin-2434-resource.services.ai.azure.com/api/projects/admin-2434"
@@ -32,9 +35,54 @@ FOUNDRY_IQ_SEARCH_ENDPOINT: "https://search-openai-demo.search.windows.net"
 FOUNDRY_IQ_FABRIC_KB: "ks-fabriciq-operator-matrix"
 ```
 
-MIRA's AKS workload identity has `Foundry User` on the Foundry project scope.
+`mira-foundry` Kubernetes secret provides the Search API key:
 
-For Fabric IQ knowledge sources, MIRA calls the dedicated Azure AI Search knowledge base retrieve endpoint directly for operational questions. It sends `x-ms-query-source-authorization` with a `https://search.azure.com/.default` token and uses the Search API key from Kubernetes secret `mira-foundry`.
+```text
+FOUNDRY_IQ_SEARCH_API_KEY=<search-openai-demo admin/query key>
+```
+
+`FOUNDRY_IQ_QUERY_SOURCE_TOKEN` must not be set.
+
+## Fabric IQ authentication and authorization
+
+### What works
+
+For operational questions such as ASSET IDs, missions, events, relay hardline, checkpoints, call signs, prowords, or ontology relationships, MIRA calls Azure AI Search retrieve directly:
+
+```http
+POST https://search-openai-demo.search.windows.net/knowledgebases('ks-fabriciq-operator-matrix')/retrieve?api-version=2026-05-01-preview
+api-key: <FOUNDRY_IQ_SEARCH_API_KEY>
+x-ms-query-source-authorization: <fresh token for https://search.azure.com/.default>
+```
+
+The Search API key authenticates the application to Azure AI Search. The `x-ms-query-source-authorization` token identifies the querying principal for Fabric IQ query-time ACL/RBAC enforcement. MIRA obtains that token dynamically with AKS Workload Identity / `DefaultAzureCredential`.
+
+### Required permissions
+
+MIRA workload identity:
+
+```text
+Name: id-mira-gateway
+Client ID: a2efd0d1-4711-4e23-9289-3b683071d608
+Principal ID: e207130d-43a7-4d7c-89a5-fb854f14ca3b
+```
+
+Required assignments:
+
+| Scope | Role |
+|---|---|
+| Foundry project `admin-2434` | `Foundry User` |
+| Fabric workspace `iq-gbb-workhop` | `Member` |
+| Search service `search-openai-demo` | `Search Index Data Reader` |
+| Search service `search-openai-demo` | `Search Service Contributor` |
+
+The Search service managed identity must also have access to the embedding/model resource:
+
+| Principal | Scope | Role |
+|---|---|---|
+| `search-openai-demo` system-assigned managed identity | `admin-2434-resource` | `Cognitive Services User` |
+
+### Do not use a static query-source token
 
 Do not store `FOUNDRY_IQ_QUERY_SOURCE_TOKEN` as a static secret. That token expires and causes Fabric IQ retrieval failures like:
 
@@ -49,16 +97,38 @@ FOUNDRY_IQ_QUERY_SOURCE_TOKEN=not_set
 FOUNDRY_IQ_SEARCH_API_KEY=set
 ```
 
-MIRA should mint a fresh `https://search.azure.com/.default` token through workload identity for every Fabric IQ query.
+MIRA must mint a fresh `https://search.azure.com/.default` token through workload identity for every Fabric IQ query.
 
-Current Fabric workspace assignment:
+To remove an accidentally stored static token:
+
+```bash
+kubectl -n mira patch secret mira-foundry \
+  --type=json \
+  -p='[{"op":"remove","path":"/data/FOUNDRY_IQ_QUERY_SOURCE_TOKEN"}]'
+
+kubectl -n mira rollout restart deployment/mira-gateway
+```
+
+Verify:
+
+```bash
+kubectl -n mira exec deploy/mira-gateway -- /bin/sh -c '
+  if [ -n "$FOUNDRY_IQ_QUERY_SOURCE_TOKEN" ]; then
+    echo FOUNDRY_IQ_QUERY_SOURCE_TOKEN=set
+  else
+    echo FOUNDRY_IQ_QUERY_SOURCE_TOKEN=not_set
+  fi
+  echo FOUNDRY_IQ_SEARCH_API_KEY=${FOUNDRY_IQ_SEARCH_API_KEY:+set}
+  echo FOUNDRY_IQ_FABRIC_KB=$FOUNDRY_IQ_FABRIC_KB
+'
+```
+
+Expected:
 
 ```text
-Workspace: iq-gbb-workhop
-Role: Member
-Principal: id-mira-gateway
-Principal ID: e207130d-43a7-4d7c-89a5-fb854f14ca3b
-Client ID: a2efd0d1-4711-4e23-9289-3b683071d608
+FOUNDRY_IQ_QUERY_SOURCE_TOKEN=not_set
+FOUNDRY_IQ_SEARCH_API_KEY=set
+FOUNDRY_IQ_FABRIC_KB=ks-fabriciq-operator-matrix
 ```
 
 ## Uploading more manuals
@@ -192,7 +262,7 @@ mira/fabric-iq-matrix-poc/ontology/manual-entry.md
 
 ## Fabric IQ auth limitation in Foundry agent references
 
-Foundry IQ sources that enforce query-time ACL/RBAC require `x-ms-query-source-authorization`. MIRA sends this header on the Responses API request, but Foundry Agent Service MCP tools invoked through `agent_reference` do not honor per-request MCP headers. Attempting to put the header directly in the persisted MCP tool definition is rejected because sensitive headers are blocked.
+Foundry IQ sources that enforce query-time ACL/RBAC require `x-ms-query-source-authorization`. Foundry Agent Service MCP tools invoked through `agent_reference` do not honor per-request MCP headers. Attempting to put the header directly in the persisted MCP tool definition is rejected because sensitive headers are blocked.
 
 Result:
 
@@ -200,7 +270,18 @@ Result:
 Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty
 ```
 
-The same Fabric IQ query works in the Foundry playground under the signed-in user. For this POC, MIRA bypasses that limitation for operational questions by calling the dedicated Fabric IQ knowledge base (`ks-fabriciq-operator-matrix`) directly through Azure AI Search retrieve API. Manual questions still use the `operator-manuals` Foundry agent path.
+The same Fabric IQ query works in the Foundry playground under the signed-in user because the playground supplies user context. For this POC, MIRA bypasses the `agent_reference` MCP header limitation for operational questions by calling the dedicated Fabric IQ knowledge base (`ks-fabriciq-operator-matrix`) directly through Azure AI Search retrieve API. Manual questions still use the `operator-manuals` Foundry agent path.
+
+### Transient Fabric data-agent failures
+
+The Fabric data-agent backend can intermittently return:
+
+```text
+status=502
+Failed to connect to Fabric Data Agent
+```
+
+MIRA treats 502/503/429 and Fabric data-agent backend connection errors as transient. For known POC demo questions such as ASSET-004 and Mission 1, it returns a local POC fallback answer rather than failing the radio exchange.
 
 ## Radio operator behavior
 
