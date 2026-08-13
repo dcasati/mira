@@ -36,6 +36,21 @@ MIRA's AKS workload identity has `Foundry User` on the Foundry project scope.
 
 For Fabric IQ knowledge sources, MIRA calls the dedicated Azure AI Search knowledge base retrieve endpoint directly for operational questions. It sends `x-ms-query-source-authorization` with a `https://search.azure.com/.default` token and uses the Search API key from Kubernetes secret `mira-foundry`.
 
+Do not store `FOUNDRY_IQ_QUERY_SOURCE_TOKEN` as a static secret. That token expires and causes Fabric IQ retrieval failures like:
+
+```text
+Invalid header 'x-ms-query-source-authorization': TokenExpired
+```
+
+The correct runtime configuration is:
+
+```text
+FOUNDRY_IQ_QUERY_SOURCE_TOKEN=not_set
+FOUNDRY_IQ_SEARCH_API_KEY=set
+```
+
+MIRA should mint a fresh `https://search.azure.com/.default` token through workload identity for every Fabric IQ query.
+
 Current Fabric workspace assignment:
 
 ```text
