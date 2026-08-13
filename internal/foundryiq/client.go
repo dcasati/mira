@@ -82,16 +82,16 @@ func (c *Client) directFabricEnabled() bool {
 
 func (c *Client) queryFabricKnowledgeBase(ctx context.Context, question string) (QueryResult, error) {
 	var lastErr error
-	for attempt := 1; attempt <= 3; attempt++ {
+	for attempt := 1; attempt <= 5; attempt++ {
 		result, err := c.queryFabricKnowledgeBaseOnce(ctx, question)
 		if err == nil {
 			return result, nil
 		}
 		lastErr = err
-		if !isFabricDataAgentTransient(err) || attempt == 3 {
+		if !isFabricDataAgentTransient(err) || attempt == 5 {
 			break
 		}
-		delay := time.Duration(attempt) * 750 * time.Millisecond
+		delay := time.Duration(attempt) * 3 * time.Second
 		select {
 		case <-time.After(delay):
 		case <-ctx.Done():

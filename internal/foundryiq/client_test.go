@@ -172,8 +172,8 @@ func TestQueryRetriesAndReturnsErrorWhenFabricDataAgentFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected Fabric data agent error")
 	}
-	if calls != 3 {
-		t.Fatalf("calls = %d, want 3", calls)
+	if calls != 5 {
+		t.Fatalf("calls = %d, want 5", calls)
 	}
 	if !strings.Contains(err.Error(), "Failed to connect to Fabric Data Agent") {
 		t.Fatalf("error = %v", err)
