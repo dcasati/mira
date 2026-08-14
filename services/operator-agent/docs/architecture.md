@@ -14,24 +14,41 @@ what caused the original production outages this architecture replaced.
 ![Fabric auth scenarios](fabric-auth-scenarios.png)
 
 **Scenario A (broken): the Azure AI Search–wrapped Fabric knowledge base
-("Foundry IQ").** This surface enforces query-time ACLs per signed-in user,
-so it requires a *delegated* (human) token passed via a custom header. A
-headless service's app-only token (managed identity / workload identity) is
-rejected outright — with generic errors (`502`/`400`, `TokenExpired`,
-"invalid null or empty") that give no indication the real cause is "wrong
-auth model for this endpoint." A manually-minted delegated token stuffed
-into a k8s secret works as a stop-gap, but expires (~2.5h observed) and
-requires perpetual human re-authentication — not viable for a production,
-always-on service.
+("Foundry IQ").** The AI Search agentic-retrieval call itself is
+authorized normally with the caller's own app-only token
+(`Authorization: Bearer <app-only-token>`, scope `search.azure.com/.default`).
+But the underlying Fabric ontology knowledge source additionally enforces
+query-time ACLs per signed-in user, and requires a **second, separate
+token passed via a custom header**:
+
+```
+x-ms-query-source-authorization: Bearer <delegated-user-token>
+```
+
+If this header is missing, or contains an app-only token instead of a
+genuine delegated (human) token, the request is rejected — with generic
+errors (`502`/`400`, `TokenExpired`, "invalid null or empty") that give no
+indication the real cause is "wrong token type in this header." The only
+way to populate this header for a headless service is to mint a delegated
+token out of band (e.g. `az account get-access-token --resource
+search.azure.com` under a human's session) and inject it manually — we did
+this via a k8s secret (`FOUNDRY_IQ_QUERY_SOURCE_TOKEN`) as a stop-gap. It
+works, but that token expires (~2.5h observed) and requires perpetual
+human re-authentication — not viable for a production, always-on service.
 
 **Scenario B (fixed): Fabric's own native Data Agent MCP endpoint**
 (`api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagents/{id}/agent`).
-This surface is authorized once, at the workspace level, by granting the
-calling identity **Member role on the Fabric workspace**. After that, a
-standard app-only Entra token (managed identity, no human involved) works
-every time — the same pattern used for any other headless Azure-to-Azure
-call. This is what `operator-agent` and `mira-gateway` use today: zero
-delegated tokens, zero rotation, ever.
+This surface has no equivalent second header — it only needs the standard
+`Authorization: Bearer <app-only-token>` header (scope
+`api.fabric.microsoft.com/.default`). Authorization happens once, out of
+band, by granting the calling identity **Member role on the Fabric
+workspace** (via the Fabric REST API's `roleAssignments` endpoint, or
+Workspace → Manage access in the portal) — not per-request. After that
+grant exists, a standard app-only Entra token (managed identity, no human
+involved) works every time — the same pattern used for any other headless
+Azure-to-Azure call. This is what `operator-agent` and `mira-gateway` use
+today: zero delegated tokens, zero `x-ms-query-source-authorization`
+header, zero rotation, ever.
 
 ## Sequence diagram — one query, end to end
 
