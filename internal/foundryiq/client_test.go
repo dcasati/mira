@@ -2,6 +2,7 @@ package foundryiq
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +26,7 @@ func (failingCredential) GetToken(context.Context, policy.TokenRequestOptions) (
 	panic("credential should not be used")
 }
 
-func TestQueryCallsFoundryResponsesWithAgentReference(t *testing.T) {
+func TestQueryCallsHostedAgentResponsesEndpoint(t *testing.T) {
 	var gotPath, gotAuth, gotBody string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
@@ -36,7 +37,7 @@ func TestQueryCallsFoundryResponsesWithAgentReference(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "manuals-agent"}, fakeCredential{})
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,197 +46,159 @@ func TestQueryCallsFoundryResponsesWithAgentReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotPath != "/openai/v1/responses" {
+	if gotPath != "/agents/operator-persona-agent/endpoint/protocols/openai/responses" {
 		t.Fatalf("path = %q", gotPath)
 	}
 	if gotAuth != "Bearer test-token" {
 		t.Fatalf("auth = %q", gotAuth)
 	}
-	if !strings.Contains(gotBody, `"agent_reference"`) || !strings.Contains(gotBody, "manuals-agent") {
-		t.Fatalf("body missing agent reference: %s", gotBody)
+	var sentBody struct {
+		Input string `json:"input"`
+	}
+	if err := json.Unmarshal([]byte(gotBody), &sentBody); err != nil {
+		t.Fatalf("body not valid JSON: %s", gotBody)
+	}
+	if sentBody.Input != "How do I calibrate it?" {
+		t.Fatalf("input = %q", sentBody.Input)
 	}
 	if result.Answer != "Use menu 7 to calibrate the device." {
 		t.Fatalf("answer = %q", result.Answer)
 	}
-}
-
-func TestConfigRequiresProjectAndAgent(t *testing.T) {
-	_, err := NewClient(Config{ProjectEndpoint: "https://example.test"}, fakeCredential{})
-	if err == nil {
-		t.Fatal("expected validation error")
+	if result.AgentName != "operator-persona-agent" {
+		t.Fatalf("agent name = %q", result.AgentName)
 	}
 }
 
-func TestQueryFabricKnowledgeBaseUsesDelegatedQuerySourceToken(t *testing.T) {
-	var gotPath, gotQuerySourceAuth string
+func TestQueryFallsBackToOutputContentWhenOutputTextMissing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
-		gotQuerySourceAuth = r.Header.Get("x-ms-query-source-authorization")
-		_, _ = w.Write([]byte(`{"response":[{"content":[{"type":"text","text":"ASSET-004 has two events."}]}]}`))
+		_, _ = w.Write([]byte(`{"id":"resp_2","output":[{"content":[{"type":"output_text","text":"ASSET-004 has two events."}]}]}`))
 	}))
 	defer server.Close()
 
-	client, err := NewClient(Config{
-		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
-		AgentName:           "manuals-agent",
-		SearchEndpoint:      server.URL,
-		SearchAPIKey:        "search-key",
-		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
-		QuerySourceToken:    "Bearer delegated-token",
-	}, failingCredential{})
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	client.cfg.ProjectEndpoint = server.URL
 	result, err := client.Query(context.Background(), "What events are recorded for ASSET-004?")
 	if err != nil {
 		t.Fatal(err)
-	}
-	if gotPath != "/knowledgebases('ks-fabriciq-operator-matrix')/retrieve" {
-		t.Fatalf("path = %q", gotPath)
-	}
-	if gotQuerySourceAuth != "delegated-token" {
-		t.Fatalf("query source auth = %q", gotQuerySourceAuth)
 	}
 	if result.Answer != "ASSET-004 has two events." {
 		t.Fatalf("answer = %q", result.Answer)
 	}
 }
 
-func TestQueryFallsBackToDirectFabricKnowledgeBaseWhenAgentCannotForwardQuerySourceAuth(t *testing.T) {
-	var gotAgentPath, gotDirectPath string
+func TestQueryDoesNotRetryOnFailureAndReturnsError(t *testing.T) {
+	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/openai/v1/responses":
-			gotAgentPath = r.URL.Path
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`{"error":{"message":"No usable knowledge sources are available. Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty."}}`))
-		case strings.HasPrefix(r.URL.Path, "/knowledgebases("):
-			gotDirectPath = r.URL.Path
-			_, _ = w.Write([]byte(`{"response":[{"content":[{"type":"text","text":"Mission 1 is a relay hardline check."}]}]}`))
-		default:
-			t.Fatalf("unexpected path %q", r.URL.Path)
-		}
+		calls++
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`{"error":{"message":"backend unavailable"}}`))
 	}))
 	defer server.Close()
 
-	client, err := NewClient(Config{
-		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
-		AgentName:           "manuals-agent",
-		SearchEndpoint:      server.URL,
-		SearchAPIKey:        "search-key",
-		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
-		QuerySourceToken:    "delegated-token",
-	}, fakeCredential{})
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	client.cfg.ProjectEndpoint = server.URL
-	result, err := client.Query(context.Background(), "How do I calibrate the operator handset?")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if gotAgentPath != "/openai/v1/responses" {
-		t.Fatalf("agent path = %q", gotAgentPath)
-	}
-	if gotDirectPath != "/knowledgebases('ks-fabriciq-operator-matrix')/retrieve" {
-		t.Fatalf("direct path = %q", gotDirectPath)
-	}
-	if result.Answer != "Mission 1 is a relay hardline check." {
-		t.Fatalf("answer = %q", result.Answer)
-	}
-}
-
-func TestQueryRetriesAndReturnsErrorWhenFabricDataAgentFails(t *testing.T) {
-	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/knowledgebases(") {
-			t.Fatalf("unexpected path %q", r.URL.Path)
-		}
-		calls++
-		w.WriteHeader(http.StatusBadGateway)
-		_, _ = w.Write([]byte(`{"error":{"message":"All retrieval tasks failed. Failures:\r\n Knowledge source 'ks-fabriciq-operator-matrix-v2': Failed to connect to Fabric Data Agent 'WorkspaceId: workspace, DataAgentId: agent' due to unexpected error. Please contact support if the issue persists"}}`))
-	}))
-	defer server.Close()
-
-	client, err := NewClient(Config{
-		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
-		AgentName:           "manuals-agent",
-		SearchEndpoint:      server.URL,
-		SearchAPIKey:        "search-key",
-		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
-		QuerySourceToken:    "delegated-token",
-	}, failingCredential{})
-	if err != nil {
-		t.Fatal(err)
-	}
 	_, err = client.Query(context.Background(), "What happened on the relay hardline?")
 	if err == nil {
-		t.Fatal("expected Fabric data agent error")
+		t.Fatal("expected error")
 	}
-	if calls != 5 {
-		t.Fatalf("calls = %d, want 5", calls)
+	if calls != 1 {
+		t.Fatalf("calls = %d, want 1 (single attempt, no retry)", calls)
 	}
-	if !strings.Contains(err.Error(), "Failed to connect to Fabric Data Agent") {
+	if !strings.Contains(err.Error(), "status=502") {
 		t.Fatalf("error = %v", err)
 	}
 }
 
-func TestQueryDoesNotFallbackForFabricAuthorizationErrors(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":{"message":"Invalid header: 'x-ms-query-source-authorization' is invalid, null or empty."}}`))
-	}))
-	defer server.Close()
-
-	client, err := NewClient(Config{
-		ProjectEndpoint:     "https://example.services.ai.azure.com/api/projects/factory",
-		AgentName:           "manuals-agent",
-		SearchEndpoint:      server.URL,
-		SearchAPIKey:        "search-key",
-		FabricKnowledgeBase: "ks-fabriciq-operator-matrix",
-		QuerySourceToken:    "delegated-token",
-	}, failingCredential{})
+func TestQueryRequiresNonEmptyQuestion(t *testing.T) {
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Query(context.Background(), "What happened on the relay hardline?")
+	_, err = client.Query(context.Background(), "   ")
 	if err == nil {
-		t.Fatal("expected auth error")
-	}
-	if strings.Contains(err.Error(), "Fabric IQ POC fallback") {
-		t.Fatalf("unexpected fallback error: %v", err)
+		t.Fatal("expected error for empty question")
 	}
 }
 
-func TestRouteQuestionPrefersFabricIQForOperationalData(t *testing.T) {
-	got := routeQuestion("What events are recorded for ASSET-004?")
-	if got == "What events are recorded for ASSET-004?" {
-		t.Fatal("expected operational question to be routed")
+func TestConfigRequiresProjectEndpointAndAgentName(t *testing.T) {
+	if _, err := NewClient(Config{ProjectEndpoint: "https://example.test"}, fakeCredential{}); err == nil {
+		t.Fatal("expected validation error when agent name missing")
 	}
-	if !strings.Contains(got, "Using Fabric IQ/operator-matrix-agent data") || !strings.Contains(got, "ASSET-004") {
-		t.Fatalf("routed question = %q", got)
+	if _, err := NewClient(Config{AgentName: "operator-persona-agent"}, fakeCredential{}); err == nil {
+		t.Fatal("expected validation error when project endpoint missing")
 	}
-}
-
-func TestRouteQuestionLeavesManualQuestionAlone(t *testing.T) {
-	const q = "How do I configure split frequency on the FT-818ND?"
-	if got := routeQuestion(q); got != q {
-		t.Fatalf("routeQuestion() = %q, want %q", got, q)
+	if _, err := NewClient(Config{ProjectEndpoint: "http://example.test", AgentName: "operator-persona-agent"}, fakeCredential{}); err == nil {
+		t.Fatal("expected validation error for non-https project endpoint")
 	}
 }
 
-func TestRouteQuestionHandlesSpeechMisrecognition(t *testing.T) {
-	got := routeQuestion("what events are we called for? Acid 004.")
-	want := "Using Fabric IQ/operator-matrix-agent data, what events are recorded for ASSET-004?"
-	if got != want {
-		t.Fatalf("routed question = %q, want %q", got, want)
+func TestConfigDisabledWhenEmpty(t *testing.T) {
+	if (Config{}).Enabled() {
+		t.Fatal("expected empty config to be disabled")
+	}
+	if (Config{}).Validate() != nil {
+		t.Fatal("expected empty (disabled) config to validate cleanly")
 	}
 }
 
-func TestRouteQuestionCanonicalizesMissionOne(t *testing.T) {
-	got := routeQuestion("what is mission one over?")
-	want := "Using Fabric IQ/operator-matrix-agent data, what is Mission 1?"
-	if got != want {
-		t.Fatalf("routed question = %q, want %q", got, want)
+func TestQueryCallsDirectEndpointWithoutAuth(t *testing.T) {
+	var gotPath, gotAuth, gotBody string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		body, _ := io.ReadAll(r.Body)
+		gotBody = string(body)
+		_, _ = w.Write([]byte(`{"id":"resp_1","output_text":"Sierra 1 is a forward field unit."}`))
+	}))
+	defer server.Close()
+
+	// failingCredential panics if GetToken is ever called -- proves the
+	// direct (in-cluster, no-auth) path never touches the credential.
+	client, err := NewClient(Config{DirectEndpoint: server.URL}, failingCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := client.Query(context.Background(), "I need information on the callsign Sierra 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/responses" {
+		t.Fatalf("path = %q", gotPath)
+	}
+	if gotAuth != "" {
+		t.Fatalf("auth = %q, want no Authorization header for direct endpoint", gotAuth)
+	}
+	var sentBody struct {
+		Input string `json:"input"`
+	}
+	if err := json.Unmarshal([]byte(gotBody), &sentBody); err != nil {
+		t.Fatalf("body not valid JSON: %s", gotBody)
+	}
+	if sentBody.Input != "I need information on the callsign Sierra 1" {
+		t.Fatalf("input = %q", sentBody.Input)
+	}
+	if result.Answer != "Sierra 1 is a forward field unit." {
+		t.Fatalf("answer = %q", result.Answer)
+	}
+	if result.AgentName != "operator-agent-aks" {
+		t.Fatalf("agent name = %q", result.AgentName)
+	}
+}
+
+func TestConfigDirectEndpointDoesNotRequireProjectOrAgentName(t *testing.T) {
+	if _, err := NewClient(Config{DirectEndpoint: "http://operator-agent-aks.operator-agent-aks.svc.cluster.local:8088"}, failingCredential{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConfigDirectEndpointRequiresScheme(t *testing.T) {
+	if _, err := NewClient(Config{DirectEndpoint: "operator-agent-aks.operator-agent-aks.svc.cluster.local:8088"}, failingCredential{}); err == nil {
+		t.Fatal("expected validation error for direct endpoint missing http(s):// scheme")
 	}
 }

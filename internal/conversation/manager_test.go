@@ -144,6 +144,103 @@ func TestGracefulConversationClose(t *testing.T) {
 	}
 }
 
+// slowFakeSession simulates a tool call (e.g. Foundry/Fabric IQ retrieval)
+// that takes longer than the conversation idle-timeout to complete.
+type slowFakeSession struct {
+	id      string
+	started chan struct{}
+	release chan struct{}
+	closed  bool
+}
+
+func (s *slowFakeSession) ID() string { return s.id }
+func (s *slowFakeSession) AskAudio(ctx context.Context, pcm []int16, sampleRate int, interim ToolInterims) ([]int16, int, error) {
+	close(s.started)
+	select {
+	case <-s.release:
+		return []int16{1, 2, 3}, audio.AzureSampleRate, nil
+	case <-ctx.Done():
+		return nil, 0, ctx.Err()
+	}
+}
+func (s *slowFakeSession) AskText(ctx context.Context, text string) (string, error) {
+	return "", nil
+}
+func (s *slowFakeSession) Close(context.Context) error {
+	s.closed = true
+	return nil
+}
+
+type slowAzureFactory struct {
+	session *slowFakeSession
+}
+
+func (f *slowAzureFactory) NewSession(context.Context) (AzureSession, error) {
+	return f.session, nil
+}
+
+// TestBusyConversationNotExpiredDuringToolCall reproduces the bug where the
+// idle-timeout watchdog (RunExpiryLoop) closed the session out from under an
+// in-flight tool call (e.g. a slow Fabric IQ retrieve), because LastActivity
+// is only refreshed after AskAudio/AskText returns. A tool call slower than
+// the idle timeout must not be treated as conversation inactivity.
+func TestBusyConversationNotExpiredDuringToolCall(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	session := &slowFakeSession{id: "sess-test", started: started, release: release}
+	azure := &slowAzureFactory{session: session}
+	tx := &fakeTX{}
+	// A short idle timeout so the watchdog would fire almost immediately if
+	// it didn't respect the Busy flag.
+	m := NewManager(50*time.Millisecond, "mira-bot", "MIRA,OPERATOR", fakeDetector{result: wakeword.Result{Activated: true}}, audio.LinearResampler{}, azure, tx, slog.Default(), &metrics.Metrics{})
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- m.HandleTransmission(context.Background(), testTransmission("alice"))
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("tool call (AskAudio) never started")
+	}
+
+	// Run the real expiry watchdog for a few ticks (>> the 50ms idle
+	// timeout) while the tool call is still in flight.
+	loopCtx, cancel := context.WithCancel(context.Background())
+	loopDone := make(chan struct{})
+	go func() {
+		m.RunExpiryLoop(loopCtx)
+		close(loopDone)
+	}()
+	time.Sleep(2500 * time.Millisecond)
+
+	if snap := m.Snapshot(); snap.State != StateActive {
+		t.Fatalf("conversation expired while tool call was in flight: state = %s", snap.State)
+	}
+	if session.closed {
+		t.Fatal("session was closed while tool call was in flight")
+	}
+
+	close(release)
+	if err := <-errCh; err != nil {
+		t.Fatal(err)
+	}
+
+	if snap := m.Snapshot(); snap.State != StateActive {
+		t.Fatalf("state after tool call completed = %s", snap.State)
+	}
+	if session.closed {
+		t.Fatal("session should remain open after a successful exchange")
+	}
+
+	// Shut down the watchdog goroutine; RunExpiryLoop unconditionally ends
+	// the conversation on ctx.Done (real shutdown), which is expected and
+	// unrelated to the Busy-flag behavior under test above.
+	cancel()
+	<-loopDone
+}
+
 func TestTextActivationAndFollowupUseSameSession(t *testing.T) {
 	azure := &fakeAzureFactory{}
 	tx := &fakeTX{}

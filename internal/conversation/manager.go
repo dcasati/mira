@@ -99,7 +99,7 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 
 	m.mu.Lock()
 	state := m.conv.State
-	if state == StateActive && m.now().Sub(m.conv.LastActivity) > m.timeout {
+	if state == StateActive && !m.conv.Busy && m.now().Sub(m.conv.LastActivity) > m.timeout {
 		m.expireLocked(ctx, "timeout")
 		state = StateIdle
 	}
@@ -137,10 +137,19 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		return err
 	}
 
+	m.mu.Lock()
+	m.conv.Busy = true
+	m.mu.Unlock()
+
 	respPCM, respRate, err := session.AskAudio(ctx, sendPCM, sendRate, ToolInterims{
 		Audio: m.tx.TransmitPCM,
 		Text:  m.tx.TransmitText,
 	})
+
+	m.mu.Lock()
+	m.conv.Busy = false
+	m.mu.Unlock()
+
 	if err != nil {
 		m.End(ctx, "azure_error")
 		return err
@@ -168,7 +177,7 @@ func (m *Manager) HandleTextMessage(ctx context.Context, msg TextMessage) error 
 
 	m.mu.Lock()
 	state := m.conv.State
-	if state == StateActive && m.now().Sub(m.conv.LastActivity) > m.timeout {
+	if state == StateActive && !m.conv.Busy && m.now().Sub(m.conv.LastActivity) > m.timeout {
 		m.expireLocked(ctx, "timeout")
 		state = StateIdle
 	}
@@ -192,7 +201,17 @@ func (m *Manager) HandleTextMessage(ctx context.Context, msg TextMessage) error 
 	if err != nil {
 		return err
 	}
+
+	m.mu.Lock()
+	m.conv.Busy = true
+	m.mu.Unlock()
+
 	reply, err := session.AskText(ctx, text)
+
+	m.mu.Lock()
+	m.conv.Busy = false
+	m.mu.Unlock()
+
 	if err != nil {
 		m.End(ctx, "azure_error")
 		return err
@@ -221,7 +240,7 @@ func (m *Manager) RunExpiryLoop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			m.mu.Lock()
-			if m.conv.State == StateActive && m.now().Sub(m.conv.LastActivity) > m.timeout {
+			if m.conv.State == StateActive && !m.conv.Busy && m.now().Sub(m.conv.LastActivity) > m.timeout {
 				m.expireLocked(ctx, "timeout")
 			}
 			m.mu.Unlock()

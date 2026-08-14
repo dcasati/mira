@@ -600,7 +600,7 @@ func (s *RealtimeSession) runTool(ctx context.Context, call functionCall, textIn
 		return s.sendZelloChat(ctx, call.Arguments, textInterim)
 	}
 	if s.foundryIQ != nil && call.Name == "query_foundry_iq_manuals" {
-		return s.foundryIQ.Run(ctx, call.Name, call.Arguments)
+		return s.foundryIQ.Run(foundryiq.WithCallContext(ctx, s.id, call.Name), call.Name, call.Arguments)
 	}
 	if s.telemetry != nil {
 		return s.telemetry.Run(ctx, call.Name, call.Arguments)

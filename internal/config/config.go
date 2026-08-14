@@ -38,14 +38,21 @@ type Config struct {
 	TelemetryDefaultLookback time.Duration
 	TelemetryMaxRows         int
 
-	FoundryProjectEndpoint    string
-	FoundryIQAgentName        string
-	FoundryIQModel            string
-	FoundryIQMaxOutputChars   int
-	FoundryIQSearchEndpoint   string
-	FoundryIQSearchAPIKey     string
-	FoundryIQFabricKB         string
-	FoundryIQQuerySourceToken string
+	// FoundryIQAgentName is the hosted agent (operator-persona-agent) that
+	// mira calls via its Responses API; that agent owns all Fabric IQ /
+	// manuals grounding internally, so mira itself no longer needs Search
+	// endpoint/key or a delegated Fabric query-source token.
+	//
+	// FoundryIQDirectEndpoint, when set, overrides ProjectEndpoint/AgentName
+	// entirely and calls a plain AKS-hosted agent (operator-agent-aks)
+	// in-cluster instead, with no auth token and no Foundry-specific URL
+	// shape. See internal/foundryiq/client.go's Config doc comment for why
+	// this exists (Foundry's hosted-agent gateway adds ~16-20s of overhead
+	// not present when calling an in-cluster agent directly).
+	FoundryProjectEndpoint  string
+	FoundryIQAgentName      string
+	FoundryIQDirectEndpoint string
+	FoundryIQMaxOutputChars int
 
 	HTTPListenAddr string
 	LogLevel       slog.Level
@@ -77,13 +84,9 @@ func Load() (Config, error) {
 		TelemetryDefaultLookback:      durationEnv("MIRA_TELEMETRY_DEFAULT_LOOKBACK", 15*time.Minute),
 		TelemetryMaxRows:              intEnv("MIRA_TELEMETRY_MAX_ROWS", 20),
 		FoundryProjectEndpoint:        os.Getenv("FOUNDRY_PROJECT_ENDPOINT"),
-		FoundryIQAgentName:            os.Getenv("FOUNDRY_IQ_AGENT_NAME"),
-		FoundryIQModel:                os.Getenv("FOUNDRY_IQ_MODEL"),
+		FoundryIQAgentName:            env("FOUNDRY_IQ_AGENT_NAME", "operator-persona-agent"),
+		FoundryIQDirectEndpoint:       os.Getenv("FOUNDRY_IQ_DIRECT_ENDPOINT"),
 		FoundryIQMaxOutputChars:       intEnv("FOUNDRY_IQ_MAX_OUTPUT_CHARS", 6000),
-		FoundryIQSearchEndpoint:       os.Getenv("FOUNDRY_IQ_SEARCH_ENDPOINT"),
-		FoundryIQSearchAPIKey:         os.Getenv("FOUNDRY_IQ_SEARCH_API_KEY"),
-		FoundryIQFabricKB:             env("FOUNDRY_IQ_FABRIC_KB", "ks-fabriciq-operator-matrix"),
-		FoundryIQQuerySourceToken:     os.Getenv("FOUNDRY_IQ_QUERY_SOURCE_TOKEN"),
 		HTTPListenAddr:                env("HTTP_LISTEN_ADDR", ":8080"),
 		LogLevel:                      parseLogLevel(env("LOG_LEVEL", "INFO")),
 	}
@@ -142,16 +145,20 @@ func (c Config) Validate() error {
 		}
 	}
 	if c.FoundryIQEnabled() {
-		for name, value := range map[string]string{
-			"FOUNDRY_PROJECT_ENDPOINT": c.FoundryProjectEndpoint,
-			"FOUNDRY_IQ_AGENT_NAME":    c.FoundryIQAgentName,
-		} {
-			if strings.TrimSpace(value) == "" {
-				errs = append(errs, fmt.Errorf("%s is required when any Foundry IQ setting is provided", name))
+		if strings.TrimSpace(c.FoundryIQDirectEndpoint) == "" {
+			for name, value := range map[string]string{
+				"FOUNDRY_PROJECT_ENDPOINT": c.FoundryProjectEndpoint,
+				"FOUNDRY_IQ_AGENT_NAME":    c.FoundryIQAgentName,
+			} {
+				if strings.TrimSpace(value) == "" {
+					errs = append(errs, fmt.Errorf("%s is required when any Foundry IQ setting is provided", name))
+				}
 			}
-		}
-		if c.FoundryProjectEndpoint != "" && !strings.HasPrefix(c.FoundryProjectEndpoint, "https://") {
-			errs = append(errs, errors.New("FOUNDRY_PROJECT_ENDPOINT must use https://"))
+			if c.FoundryProjectEndpoint != "" && !strings.HasPrefix(c.FoundryProjectEndpoint, "https://") {
+				errs = append(errs, errors.New("FOUNDRY_PROJECT_ENDPOINT must use https://"))
+			}
+		} else if !strings.HasPrefix(c.FoundryIQDirectEndpoint, "http://") && !strings.HasPrefix(c.FoundryIQDirectEndpoint, "https://") {
+			errs = append(errs, errors.New("FOUNDRY_IQ_DIRECT_ENDPOINT must use http:// or https://"))
 		}
 		if c.FoundryIQMaxOutputChars <= 0 {
 			errs = append(errs, errors.New("FOUNDRY_IQ_MAX_OUTPUT_CHARS must be positive"))
@@ -166,10 +173,12 @@ func (c Config) TelemetryEnabled() bool {
 		strings.TrimSpace(c.FabricKQLTable) != ""
 }
 
+// FoundryIQEnabled reports whether Foundry IQ is configured. It keys off
+// FoundryProjectEndpoint or FoundryIQDirectEndpoint: FoundryIQAgentName
+// always has a default ("operator-persona-agent") so its presence alone
+// doesn't indicate intent to enable the feature.
 func (c Config) FoundryIQEnabled() bool {
-	return strings.TrimSpace(c.FoundryProjectEndpoint) != "" ||
-		strings.TrimSpace(c.FoundryIQAgentName) != "" ||
-		strings.TrimSpace(c.FoundryIQModel) != ""
+	return strings.TrimSpace(c.FoundryProjectEndpoint) != "" || strings.TrimSpace(c.FoundryIQDirectEndpoint) != ""
 }
 
 func env(name, fallback string) string {
