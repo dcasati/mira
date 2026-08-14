@@ -1,0 +1,58 @@
+name: Publish ontology schema to Redis
+
+# Triggered when Fabric's Git integration commits an updated Ontology
+# definition (fabric-workspace/**), or when a human updates the curated
+# enrichment file (enrichment/**). Both are PR-reviewable before landing
+# on main and being published.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fabric-workspace/**"
+      - "enrichment/**"
+  workflow_dispatch: {} # manual "force refresh now" escape hatch
+
+permissions:
+  id-token: write # required for OIDC federation to Azure (azure/login)
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install script dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Transform ontology
+        run: python scripts/transform_ontology.py
+
+      # No client secret stored anywhere: this exchanges GitHub's own
+      # OIDC token for an Azure AD token, scoped to id-ontology-sync-github
+      # via the federated credential already configured on that identity
+      # (trusting repo:dcasati/operator-matrix-ontology:ref:refs/heads/main).
+      - name: Azure login (OIDC, no secret)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          # No subscription-id: this identity only needs a plain Entra
+          # token for Redis (data-plane access via a Redis
+          # access-policy-assignment), not any ARM API access. It has no
+          # subscription-level role assignment anywhere, so passing
+          # subscription-id (even with allow-no-subscriptions: true)
+          # fails with "the subscription ... doesn't exist" since
+          # azure/login still attempts `az account set` against it.
+          allow-no-subscriptions: true
+
+      - name: Publish to Redis
+        env:
+          REDIS_HOST: ${{ vars.REDIS_HOST }}
+          REDIS_PORT: ${{ vars.REDIS_PORT }}
+          AZURE_IDENTITY_OBJECT_ID: ${{ vars.AZURE_IDENTITY_OBJECT_ID }}
+        run: python scripts/publish_to_redis.py

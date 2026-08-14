@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "bfb30894-ee4e-41e8-86bb-6f7d0d2317d3",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "asset_id",
+        "targetPropertyId": "2641099594259853210"
+      },
+      {
+        "sourceColumnName": "asset_type",
+        "targetPropertyId": "2641099593466746916"
+      },
+      {
+        "sourceColumnName": "description",
+        "targetPropertyId": "2641099595927914918"
+      },
+      {
+        "sourceColumnName": "name",
+        "targetPropertyId": "2641099595410725776"
+      },
+      {
+        "sourceColumnName": "status",
+        "targetPropertyId": "2641099592443818264"
+      },
+      {
+        "sourceColumnName": "zone",
+        "targetPropertyId": "2641099594457304715"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+      "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+      "sourceTableName": "simulation_assets",
+      "sourceSchema": null
+    }
+  }
+}

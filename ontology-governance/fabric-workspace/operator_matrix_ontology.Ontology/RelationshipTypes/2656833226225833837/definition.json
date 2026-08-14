@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/relationshipType/1.0.0/schema.json",
+  "namespace": "usertypes",
+  "id": "2656833226225833837",
+  "name": "procedure_uses_proword",
+  "namespaceType": "Custom",
+  "source": {
+    "entityTypeId": "202936495114292"
+  },
+  "target": {
+    "entityTypeId": "210251474561663"
+  }
+}

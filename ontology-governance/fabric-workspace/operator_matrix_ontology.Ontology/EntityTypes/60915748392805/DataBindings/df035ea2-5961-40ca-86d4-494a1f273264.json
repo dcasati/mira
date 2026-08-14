@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "df035ea2-5961-40ca-86d4-494a1f273264",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "asset_id",
+        "targetPropertyId": "2647383709444200460"
+      },
+      {
+        "sourceColumnName": "call_sign",
+        "targetPropertyId": "2647383710366708540"
+      },
+      {
+        "sourceColumnName": "details",
+        "targetPropertyId": "2647383709832228185"
+      },
+      {
+        "sourceColumnName": "event_id",
+        "targetPropertyId": "2647383713348472420"
+      },
+      {
+        "sourceColumnName": "event_time",
+        "targetPropertyId": "2647383709606833891"
+      },
+      {
+        "sourceColumnName": "event_type",
+        "targetPropertyId": "2647383711045168277"
+      },
+      {
+        "sourceColumnName": "severity",
+        "targetPropertyId": "2647383712469565598"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+      "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+      "sourceTableName": "operator_events",
+      "sourceSchema": null
+    }
+  }
+}

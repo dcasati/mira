@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "8fd43017-8db5-4962-bdf6-b5f8af13242b",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "call_sign",
+        "targetPropertyId": "2634016338413213148"
+      },
+      {
+        "sourceColumnName": "nato_expansion",
+        "targetPropertyId": "2634016336625171761"
+      },
+      {
+        "sourceColumnName": "preferred_ack",
+        "targetPropertyId": "2634016338570891311"
+      },
+      {
+        "sourceColumnName": "role",
+        "targetPropertyId": "2634016340069991405"
+      },
+      {
+        "sourceColumnName": "unit_type",
+        "targetPropertyId": "2634016338583107071"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+      "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+      "sourceTableName": "call_signs",
+      "sourceSchema": null
+    }
+  }
+}

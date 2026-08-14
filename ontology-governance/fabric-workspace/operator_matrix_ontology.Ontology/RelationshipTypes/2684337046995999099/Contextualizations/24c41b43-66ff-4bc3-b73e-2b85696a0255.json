@@ -1,0 +1,23 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/contextualization/1.0.0/schema.json",
+  "id": "24c41b43-66ff-4bc3-b73e-2b85696a0255",
+  "dataBindingTable": {
+    "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+    "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+    "sourceTableName": "mission_events",
+    "sourceSchema": null,
+    "sourceType": "LakehouseTable"
+  },
+  "sourceKeyRefBindings": [
+    {
+      "sourceColumnName": "mission_id",
+      "targetPropertyId": "2686253202949114680"
+    }
+  ],
+  "targetKeyRefBindings": [
+    {
+      "sourceColumnName": "event_id",
+      "targetPropertyId": "2647383713348472420"
+    }
+  ]
+}

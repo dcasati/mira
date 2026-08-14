@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/relationshipType/1.0.0/schema.json",
+  "namespace": "usertypes",
+  "id": "2683752711181386831",
+  "name": "mission_assigned_to_call_sign",
+  "namespaceType": "Custom",
+  "source": {
+    "entityTypeId": "220675368701875"
+  },
+  "target": {
+    "entityTypeId": "213257146611438"
+  }
+}

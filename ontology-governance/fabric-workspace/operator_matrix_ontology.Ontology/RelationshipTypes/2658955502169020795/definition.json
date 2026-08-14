@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/relationshipType/1.0.0/schema.json",
+  "namespace": "usertypes",
+  "id": "2658955502169020795",
+  "name": "procedure_references_asset",
+  "namespaceType": "Custom",
+  "source": {
+    "entityTypeId": "202936495114292"
+  },
+  "target": {
+    "entityTypeId": "235803579317014"
+  }
+}

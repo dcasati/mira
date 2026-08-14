@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "d740a6d3-d2f9-4f5b-9914-d7147b104ef0",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "category",
+        "targetPropertyId": "2645319277064837606"
+      },
+      {
+        "sourceColumnName": "doc_id",
+        "targetPropertyId": "2645319277161674284"
+      },
+      {
+        "sourceColumnName": "procedure_text",
+        "targetPropertyId": "2645319277141289721"
+      },
+      {
+        "sourceColumnName": "prowords",
+        "targetPropertyId": "2645319276618636503"
+      },
+      {
+        "sourceColumnName": "related_assets",
+        "targetPropertyId": "2645319274662190628"
+      },
+      {
+        "sourceColumnName": "summary",
+        "targetPropertyId": "2645319276603254578"
+      },
+      {
+        "sourceColumnName": "title",
+        "targetPropertyId": "2645319274876293134"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+      "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+      "sourceTableName": "operator_mission_manual",
+      "sourceSchema": null
+    }
+  }
+}
