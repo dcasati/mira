@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/dataBinding/1.0.0/schema.json",
+  "id": "7f8b1b3f-31d4-4325-9704-365bfbedaedd",
+  "dataBindingConfiguration": {
+    "dataBindingType": "NonTimeSeries",
+    "propertyBindings": [
+      {
+        "sourceColumnName": "assigned_call_signs",
+        "targetPropertyId": "2686253204140015234"
+      },
+      {
+        "sourceColumnName": "mission_id",
+        "targetPropertyId": "2686253202949114680"
+      },
+      {
+        "sourceColumnName": "name",
+        "targetPropertyId": "2686253205991462047"
+      },
+      {
+        "sourceColumnName": "objective",
+        "targetPropertyId": "2686253203303176134"
+      },
+      {
+        "sourceColumnName": "procedure_ids",
+        "targetPropertyId": "2686253204778495893"
+      },
+      {
+        "sourceColumnName": "status",
+        "targetPropertyId": "2686253202691362907"
+      },
+      {
+        "sourceColumnName": "target_asset_ids",
+        "targetPropertyId": "2686253203169202596"
+      }
+    ],
+    "sourceTableProperties": {
+      "sourceType": "LakehouseTable",
+      "workspaceId": "71f18f4c-2832-4dbc-9fdf-178b0954cc38",
+      "itemId": "a1d81601-1fde-43d7-98c7-8d62c077ba57",
+      "sourceTableName": "missions",
+      "sourceSchema": null
+    }
+  }
+}

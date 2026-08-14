@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/entityType/1.0.0/schema.json",
+  "id": "213257146611438",
+  "namespace": "usertypes",
+  "baseEntityTypeId": null,
+  "name": "CallSign",
+  "entityIdParts": [
+    "2634016338413213148"
+  ],
+  "displayNamePropertyId": null,
+  "namespaceType": "Custom",
+  "visibility": "Visible",
+  "properties": [
+    {
+      "id": "2634016338413213148",
+      "name": "call_sign",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2634016336625171761",
+      "name": "nato_expansion",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2634016338570891311",
+      "name": "preferred_ack",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2634016340069991405",
+      "name": "role",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2634016338583107071",
+      "name": "unit_type",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    }
+  ],
+  "timeseriesProperties": [],
+  "semanticEnrichment": {
+    "synonyms": [],
+    "description": "A radio identity used by a field unit, base unit, or monitoring unit.\n",
+    "customAttributes": {}
+  },
+  "untypedProperties": []
+}

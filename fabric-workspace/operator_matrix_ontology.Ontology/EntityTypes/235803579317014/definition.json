@@ -1,0 +1,77 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/entityType/1.0.0/schema.json",
+  "id": "235803579317014",
+  "namespace": "usertypes",
+  "baseEntityTypeId": null,
+  "name": "Asset",
+  "entityIdParts": [
+    "2641099594259853210"
+  ],
+  "displayNamePropertyId": null,
+  "namespaceType": "Custom",
+  "visibility": "Visible",
+  "properties": [
+    {
+      "id": "2641099594259853210",
+      "name": "asset_id",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2641099593466746916",
+      "name": "asset_type",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2641099595927914918",
+      "name": "description",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2641099595410725776",
+      "name": "name",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2641099592443818264",
+      "name": "status",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    },
+    {
+      "id": "2641099594457304715",
+      "name": "zone",
+      "redefines": null,
+      "baseTypeNamespaceType": null,
+      "valueType": "String"
+    }
+  ],
+  "timeseriesProperties": [],
+  "semanticEnrichment": {
+    "synonyms": [
+      "Bravo",
+      "CP Bravo",
+      "B Checkpoint",
+      "Charlie",
+      "CP Charlie",
+      "hardline",
+      "relay link",
+      "anomaly",
+      "signal relay",
+      "construct drift",
+      "timing drift",
+      "C checkpoint"
+    ],
+    "description": "A fictional operational object such as a checkpoint, relay, construct, or command node.\n",
+    "customAttributes": {}
+  },
+  "untypedProperties": []
+}

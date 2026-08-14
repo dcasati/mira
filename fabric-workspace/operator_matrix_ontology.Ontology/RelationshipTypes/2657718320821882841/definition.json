@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/ontology/relationshipType/1.0.0/schema.json",
+  "namespace": "usertypes",
+  "id": "2657718320821882841",
+  "name": "event_reported_by_call_sign",
+  "namespaceType": "Custom",
+  "source": {
+    "entityTypeId": "60915748392805"
+  },
+  "target": {
+    "entityTypeId": "213257146611438"
+  }
+}
