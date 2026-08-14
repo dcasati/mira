@@ -1,0 +1,76 @@
+@prefix op: <https://example.invalid/operator-ontology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+op:CallSign a rdfs:Class ;
+  rdfs:label "Call sign" ;
+  rdfs:comment "A radio identity used by a field unit, base unit, or monitoring unit." .
+
+op:Asset a rdfs:Class ;
+  rdfs:label "Asset" ;
+  rdfs:comment "A fictional operational object such as a checkpoint, relay, construct, or command node." .
+
+op:Procedure a rdfs:Class ;
+  rdfs:label "Procedure" ;
+  rdfs:comment "A documented action sequence Operator can retrieve and summarize." .
+
+op:Event a rdfs:Class ;
+  rdfs:label "Event" ;
+  rdfs:comment "A time-stamped observation or operational event." .
+
+op:Proword a rdfs:Class ;
+  rdfs:label "Proword" ;
+  rdfs:comment "A radio procedure word with operational meaning." .
+
+op:Mission a rdfs:Class ;
+  rdfs:label "Mission" ;
+  rdfs:comment "A coordinated simulation objective that assigns call signs, targets assets, uses procedures, and produces events." .
+
+op:Role a rdfs:Class ;
+  rdfs:label "Role" ;
+  rdfs:comment "An original character-like operational role used for demo storytelling without using copyrighted character names." .
+
+op:procedureReferencesAsset a rdf:Property ;
+  rdfs:domain op:Procedure ;
+  rdfs:range op:Asset ;
+  rdfs:comment "Procedure related_assets references asset names." .
+
+op:eventObservedOnAsset a rdf:Property ;
+  rdfs:domain op:Event ;
+  rdfs:range op:Asset ;
+  rdfs:comment "operator_events.asset_id joins simulation_assets.asset_id." .
+
+op:eventReportedByCallSign a rdf:Property ;
+  rdfs:domain op:Event ;
+  rdfs:range op:CallSign ;
+  rdfs:comment "operator_events.call_sign joins call_signs.call_sign." .
+
+op:missionUsesProcedure a rdf:Property ;
+  rdfs:domain op:Mission ;
+  rdfs:range op:Procedure ;
+  rdfs:comment "missions.procedure_ids contains operator_mission_manual.doc_id." .
+
+op:missionTargetsAsset a rdf:Property ;
+  rdfs:domain op:Mission ;
+  rdfs:range op:Asset ;
+  rdfs:comment "missions.target_asset_ids contains simulation_assets.asset_id." .
+
+op:missionAssignedToCallSign a rdf:Property ;
+  rdfs:domain op:Mission ;
+  rdfs:range op:CallSign ;
+  rdfs:comment "missions.assigned_call_signs contains call_signs.call_sign." .
+
+op:missionHasEvent a rdf:Property ;
+  rdfs:domain op:Mission ;
+  rdfs:range op:Event ;
+  rdfs:comment "mission_events joins missions to operator_events." .
+
+op:roleUsesCallSign a rdf:Property ;
+  rdfs:domain op:Role ;
+  rdfs:range op:CallSign ;
+  rdfs:comment "original_roles.call_sign joins call_signs.call_sign." .
+
+op:roleParticipatesInMission a rdf:Property ;
+  rdfs:domain op:Role ;
+  rdfs:range op:Mission ;
+  rdfs:comment "original_roles.related_missions contains missions.mission_id." .

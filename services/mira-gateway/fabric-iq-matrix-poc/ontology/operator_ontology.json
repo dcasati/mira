@@ -1,0 +1,146 @@
+{
+  "ontology": "operator-simulation-ops",
+  "version": "0.1.0",
+  "description": "Original synthetic ontology for Operator/Fabric IQ simulation operations.",
+  "entities": [
+    {
+      "name": "CallSign",
+      "description": "A radio identity used by a field unit, base unit, or monitoring unit.",
+      "key": "call_sign",
+      "examples": ["Sierra 1", "Echo 2", "Control"]
+    },
+    {
+      "name": "Asset",
+      "description": "A fictional operational object such as a checkpoint, relay, construct, or command node.",
+      "key": "asset_id",
+      "examples": ["ASSET-002", "ASSET-004"]
+    },
+    {
+      "name": "Procedure",
+      "description": "A documented action sequence Operator can retrieve and summarize.",
+      "key": "doc_id",
+      "examples": ["PROC-003", "PROC-004"]
+    },
+    {
+      "name": "Event",
+      "description": "A time-stamped observation or operational event.",
+      "key": "event_id",
+      "examples": ["EVT-004", "EVT-005"]
+    },
+    {
+      "name": "Proword",
+      "description": "A radio procedure word with operational meaning.",
+      "key": "proword",
+      "examples": ["Roger", "Wilco", "Standby", "Over", "Out"]
+    },
+    {
+      "name": "Mission",
+      "description": "A coordinated simulation objective that assigns call signs, targets assets, uses procedures, and produces events.",
+      "key": "mission_id",
+      "examples": ["MISSION-001", "MISSION-002"]
+    },
+    {
+      "name": "Role",
+      "description": "An original character-like operational role used for demo storytelling without using copyrighted character names.",
+      "key": "role_id",
+      "examples": ["ROLE-001", "ROLE-002"]
+    }
+  ],
+  "relationships": [
+    {
+      "name": "procedure_references_asset",
+      "from": "Procedure",
+      "to": "Asset",
+      "join_hint": "operator_mission_manual.related_assets contains simulation_assets.name"
+    },
+    {
+      "name": "event_observed_on_asset",
+      "from": "Event",
+      "to": "Asset",
+      "join_hint": "operator_events.asset_id = simulation_assets.asset_id"
+    },
+    {
+      "name": "event_reported_by_call_sign",
+      "from": "Event",
+      "to": "CallSign",
+      "join_hint": "operator_events.call_sign = call_signs.call_sign"
+    },
+    {
+      "name": "procedure_uses_proword",
+      "from": "Procedure",
+      "to": "Proword",
+      "join_hint": "operator_mission_manual.prowords contains Proword.proword"
+    },
+    {
+      "name": "mission_uses_procedure",
+      "from": "Mission",
+      "to": "Procedure",
+      "join_hint": "missions.procedure_ids contains operator_mission_manual.doc_id"
+    },
+    {
+      "name": "mission_targets_asset",
+      "from": "Mission",
+      "to": "Asset",
+      "join_hint": "missions.target_asset_ids contains simulation_assets.asset_id"
+    },
+    {
+      "name": "mission_assigned_to_call_sign",
+      "from": "Mission",
+      "to": "CallSign",
+      "join_hint": "missions.assigned_call_signs contains call_signs.call_sign"
+    },
+    {
+      "name": "mission_has_event",
+      "from": "Mission",
+      "to": "Event",
+      "join_hint": "mission_events.mission_id = missions.mission_id and mission_events.event_id = operator_events.event_id"
+    },
+    {
+      "name": "role_uses_call_sign",
+      "from": "Role",
+      "to": "CallSign",
+      "join_hint": "original_roles.call_sign = call_signs.call_sign"
+    },
+    {
+      "name": "role_participates_in_mission",
+      "from": "Role",
+      "to": "Mission",
+      "join_hint": "original_roles.related_missions contains missions.mission_id"
+    }
+  ],
+  "synonyms": {
+    "checkpoint Bravo": ["Bravo", "CP Bravo", "B checkpoint"],
+    "checkpoint Charlie": ["Charlie", "CP Charlie", "C checkpoint"],
+    "relay hardline": ["hardline", "relay link", "signal relay"],
+    "construct anomaly": ["anomaly", "construct drift", "timing drift"],
+    "radio check": ["comms check", "signal check", "readability check"]
+  },
+  "nato_phonetic_alphabet": {
+    "A": "Alpha",
+    "B": "Bravo",
+    "C": "Charlie",
+    "D": "Delta",
+    "E": "Echo",
+    "F": "Foxtrot",
+    "G": "Golf",
+    "H": "Hotel",
+    "I": "India",
+    "J": "Juliett",
+    "K": "Kilo",
+    "L": "Lima",
+    "M": "Mike",
+    "N": "November",
+    "O": "Oscar",
+    "P": "Papa",
+    "Q": "Quebec",
+    "R": "Romeo",
+    "S": "Sierra",
+    "T": "Tango",
+    "U": "Uniform",
+    "V": "Victor",
+    "W": "Whiskey",
+    "X": "X-ray",
+    "Y": "Yankee",
+    "Z": "Zulu"
+  }
+}

@@ -1,0 +1,13 @@
+.env
+.envrc
+*.log
+*.pem
+*.key
+*.token
+bin/
+dist/
+models/
+coverage.out
+output.pcm
+input.pcm
+.DS_Store

@@ -1,0 +1,4 @@
+mission_id,name,objective,status,assigned_call_signs,target_asset_ids,procedure_ids
+MISSION-001,Bravo to Charlie Advance,Move Sierra 1 from checkpoint Bravo to checkpoint Charlie after secure status is confirmed,active,Sierra 1,ASSET-002;ASSET-003,PROC-002;PROC-003
+MISSION-002,Relay Hardline Recovery,Restore degraded relay hardline and confirm signal stability,complete,Echo 2,ASSET-004,PROC-004
+MISSION-003,Construct Drift Watch,Monitor construct A-17 for repeated anomaly timing drift,watch,Observer,ASSET-005;ASSET-006,PROC-005

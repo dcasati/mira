@@ -1,0 +1,6 @@
+mission_id,event_id,relationship_type
+MISSION-001,EVT-002,status_report
+MISSION-001,EVT-003,movement_order
+MISSION-002,EVT-004,problem_observed
+MISSION-002,EVT-006,recovery_confirmed
+MISSION-003,EVT-005,anomaly_observed

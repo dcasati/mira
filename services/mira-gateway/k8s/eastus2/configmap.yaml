@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mira-config
+  namespace: mira
+data:
+  MIRA_WAKE_WORD: "MIRA,MEERA,MYRA,MIRAH,MEARA,OPERATOR"
+  MIRA_CONVERSATION_TIMEOUT: "45s"
+  MIRA_WHISPER_MODEL_PATH: "/models/ggml-tiny.en.bin"
+  MIRA_MAX_RX_SECONDS: "60"
+  MIRA_MAX_TX_SECONDS: "60"
+  ZELLO_ENDPOINT: "wss://zello.io/ws"
+  AZURE_OPENAI_ENDPOINT: "https://instance-openai-dc.openai.azure.com"
+  AZURE_OPENAI_REALTIME_DEPLOYMENT: "mira-gpt-realtime-mini"
+  AZURE_OPENAI_REALTIME_VOICE: "echo"
+  MIRA_LOOKUP_FILLER: "Standby."
+  # POC telemetry tools are disabled until these three Fabric/Eventhouse values are set.
+  # FABRIC_KQL_ENDPOINT: "https://<eventhouse-cluster>.kusto.fabric.microsoft.com"
+  # FABRIC_KQL_DATABASE: "<kql-database-name>"
+  # FABRIC_KQL_TABLE: "Telemetry"
+  MIRA_TELEMETRY_TIME_COLUMN: "Timestamp"
+  MIRA_TELEMETRY_DEVICE_COLUMN: "DeviceId"
+  MIRA_TELEMETRY_DEFAULT_LOOKBACK: "15m"
+  MIRA_TELEMETRY_MAX_ROWS: "20"
+  # This cluster (aks-mira-eastus2) runs in the same region as
+  # operator-agent-aks, so mira calls it directly in-cluster instead of
+  # going through Foundry's hosted-agent gateway -- measured to add
+  # ~16-20s of overhead beyond the agent's own ~11.6s of actual work (see
+  # internal/foundryiq/client.go's Config doc comment). FOUNDRY_PROJECT_ENDPOINT/
+  # FOUNDRY_IQ_AGENT_NAME are intentionally omitted: FOUNDRY_IQ_DIRECT_ENDPOINT
+  # takes priority in the Go client when set.
+  FOUNDRY_IQ_DIRECT_ENDPOINT: "http://operator-agent-aks.operator-agent-aks.svc.cluster.local:8088"
+  FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
+  HTTP_LISTEN_ADDR: ":8080"
+  LOG_LEVEL: "DEBUG"
