@@ -5,6 +5,34 @@ operator questions by grounding on Fabric's Ontology metadata and reading
 operational data directly from OneLake, with Azure Managed Redis as a
 governed cache in front of Fabric's ontology discovery step.
 
+## Fabric authorization: two incompatible models, and why one of them broke us
+
+There are two separate ways to ground an agent on Fabric data, with two
+fundamentally different authorization requirements. Getting this wrong is
+what caused the original production outages this architecture replaced.
+
+![Fabric auth scenarios](fabric-auth-scenarios.png)
+
+**Scenario A (broken): the Azure AI Search–wrapped Fabric knowledge base
+("Foundry IQ").** This surface enforces query-time ACLs per signed-in user,
+so it requires a *delegated* (human) token passed via a custom header. A
+headless service's app-only token (managed identity / workload identity) is
+rejected outright — with generic errors (`502`/`400`, `TokenExpired`,
+"invalid null or empty") that give no indication the real cause is "wrong
+auth model for this endpoint." A manually-minted delegated token stuffed
+into a k8s secret works as a stop-gap, but expires (~2.5h observed) and
+requires perpetual human re-authentication — not viable for a production,
+always-on service.
+
+**Scenario B (fixed): Fabric's own native Data Agent MCP endpoint**
+(`api.fabric.microsoft.com/v1/mcp/workspaces/{id}/dataagents/{id}/agent`).
+This surface is authorized once, at the workspace level, by granting the
+calling identity **Member role on the Fabric workspace**. After that, a
+standard app-only Entra token (managed identity, no human involved) works
+every time — the same pattern used for any other headless Azure-to-Azure
+call. This is what `operator-agent` and `mira-gateway` use today: zero
+delegated tokens, zero rotation, ever.
+
 ## Sequence diagram — one query, end to end
 
 ```mermaid
