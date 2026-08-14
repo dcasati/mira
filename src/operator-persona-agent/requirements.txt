@@ -1,0 +1,17 @@
+agent-framework-foundry
+agent-framework-foundry-hosting>=1.0.0a260630
+
+# Direct OneLake/Delta-table reads for operator_matrix_lookup, schema
+# discovered live from Fabric's own Ontology metadata -- replaces the
+# Fabric Data Agent MCP tool entirely. See operator_matrix_data.py for the
+# full rationale and measured latency numbers.
+deltalake
+pyarrow
+pandas
+httpx
+# Schema cache read from Azure Managed Redis (Entra ID auth), fed by the
+# operator-matrix-ontology CI pipeline. See operator_matrix_data.py.
+redis
+
+# debugpy enables local debugging of this agent with the Foundry Toolkit VS Code extension.
+debugpy

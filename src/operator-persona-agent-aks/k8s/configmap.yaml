@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-agent-config
+  namespace: operator-agent-aks
+data:
+  FOUNDRY_PROJECT_ENDPOINT: "https://admin-2434-resource.services.ai.azure.com/api/projects/admin-2434"
+  AZURE_AI_MODEL_DEPLOYMENT_NAME: "gpt-5-mini"
+  FOUNDRY_IQ_SEARCH_ENDPOINT: "https://search-openai-demo.search.windows.net"
+  FABRIC_WORKSPACE_ID: "71f18f4c-2832-4dbc-9fdf-178b0954cc38"
+  # The Lakehouse, its tables, and their relationships are all discovered
+  # live from Fabric's own Ontology metadata at startup -- no
+  # FABRIC_LAKEHOUSE_ID or FABRIC_DATA_AGENT_ID needed. See
+  # operator_matrix_data.py for the full rationale.
+  # REDIS_HOST/PORT: governed, CI-published ontology schema cache (see
+  # github.com/dcasati/operator-matrix-ontology). Entra ID auth only --
+  # this pod's own workload identity must be granted a Redis
+  # access-policy-assignment (already done for id-operator-agent-aks).
+  # Optional: if unset or unreachable, falls back to live Fabric discovery.
+  REDIS_HOST: "redis-operator-matrix-eastus2.eastus2.redis.azure.net"
+  REDIS_PORT: "10000"
+  PORT: "8088"

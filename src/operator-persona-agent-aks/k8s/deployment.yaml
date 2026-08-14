@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator-agent-aks
+  namespace: operator-agent-aks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: operator-agent-aks
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: operator-agent-aks
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: operator-agent
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: operator-agent
+          image: myregistryvkzd.azurecr.io/operator-agent-aks@sha256:812e78b336bab49fd6871e3ba18b1b91870ab924b2a4b300553d133f8faae4ab
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8088
+          env:
+            # azure-ai-agentserver's internal state (task persistence,
+            # response-store checkpoints, etc.) defaults to ~/.agentserver,
+            # which resolves to /.agentserver since this container has no
+            # HOME set -- unwritable by our non-root UID at the filesystem
+            # root. AGENTSERVER_STATE_ROOT is the single documented knob to
+            # redirect all of that to the writable emptyDir mounted below.
+            - name: AGENTSERVER_STATE_ROOT
+              value: /agentserver-state
+          envFrom:
+            - configMapRef:
+                name: operator-agent-config
+            - secretRef:
+                name: operator-agent-secrets
+          volumeMounts:
+            - name: agentserver-state
+              mountPath: /agentserver-state
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: agentserver-state
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-agent-aks
+  namespace: operator-agent-aks
+spec:
+  selector:
+    app.kubernetes.io/name: operator-agent-aks
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
