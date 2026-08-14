@@ -1,0 +1,4 @@
+{
+  "$comment": "Human-curated additions to the Fabric-sourced ontology schema. Additive only: entity_synonyms may only reference entity names that already exist in the Fabric ontology (see scripts/transform_ontology.py's merge_enrichment). Changes here go through normal PR review before being published to Redis.",
+  "entity_synonyms": {}
+}

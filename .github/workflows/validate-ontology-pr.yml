@@ -1,0 +1,31 @@
+name: Validate ontology transform (PR)
+
+# Runs on every PR touching the synced Fabric definition or the curated
+# enrichment file. No Azure credentials involved -- this only proves the
+# transform script runs cleanly and produces a sane schema, so reviewers
+# can see the effect of a change before it merges and publishes to Redis.
+on:
+  pull_request:
+    paths:
+      - "fabric-workspace/**"
+      - "enrichment/**"
+      - "scripts/transform_ontology.py"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install script dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Transform ontology (dry run)
+        run: python scripts/transform_ontology.py
+
+      - name: Show resulting schema
+        run: cat build/ontology_schema.json
