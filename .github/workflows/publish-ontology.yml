@@ -41,12 +41,13 @@ jobs:
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          # This identity only needs Redis data-plane access (granted via
-          # a Redis access-policy-assignment, not an ARM role), so it has
-          # no subscription-level role assignment at all -- expected and
-          # fine, since publish_to_redis.py only needs an Entra token, not
-          # any ARM API calls.
+          # No subscription-id: this identity only needs a plain Entra
+          # token for Redis (data-plane access via a Redis
+          # access-policy-assignment), not any ARM API access. It has no
+          # subscription-level role assignment anywhere, so passing
+          # subscription-id (even with allow-no-subscriptions: true)
+          # fails with "the subscription ... doesn't exist" since
+          # azure/login still attempts `az account set` against it.
           allow-no-subscriptions: true
 
       - name: Publish to Redis
