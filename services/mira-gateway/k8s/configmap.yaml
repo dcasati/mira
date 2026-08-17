@@ -5,7 +5,12 @@ metadata:
   namespace: mira
 data:
   MIRA_WAKE_WORD: "MIRA,MEERA,MYRA,MIRAH,MEARA,OPERATOR"
-  MIRA_CONVERSATION_TIMEOUT: "45s"
+  # Raised from 45s on 2026-08-17: a cold Foundry hosted-agent call
+  # (query_foundry_iq_manuals) can take 35-56s end to end, which meant the
+  # conversation could expire at or before the answer came back, leaving
+  # no window for a natural follow-up. See internal/config/config.go's
+  # Config.ConversationTimeout doc comment.
+  MIRA_CONVERSATION_TIMEOUT: "120s"
   MIRA_WHISPER_MODEL_PATH: "/models/ggml-tiny.en.bin"
   MIRA_MAX_RX_SECONDS: "60"
   MIRA_MAX_TX_SECONDS: "60"

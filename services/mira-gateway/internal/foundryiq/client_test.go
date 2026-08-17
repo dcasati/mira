@@ -286,6 +286,60 @@ func TestQueryDoesNotChainAcrossDifferentConversations(t *testing.T) {
 	}
 }
 
+func TestQueryChainsByConversationKeyAcrossDifferentSessionIDs(t *testing.T) {
+	// Reproduces the real production scenario found 2026-08-17: mira's own
+	// MIRA_CONVERSATION_TIMEOUT expiring starts a brand-new Realtime
+	// session (a new session_id) even when the same operator asks a
+	// follow-up shortly after. Without a conversation key that outlives
+	// session_id, previous_response_id chaining would never fire in
+	// practice -- every turn would look like turn 1 of a new conversation.
+	var bodies []string
+	responseID := "resp_1"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(body))
+		_, _ = w.Write([]byte(`{"id":"` + responseID + `","output_text":"ok"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.cfg.ProjectEndpoint = server.URL
+
+	// Turn 1: Realtime session_id "sess_realtime_1", speaker "dcasati".
+	ctx1 := WithCallContext(context.Background(), "sess_realtime_1", "query_foundry_iq_manuals")
+	ctx1 = WithConversationKey(ctx1, "dcasati")
+	if _, err := client.Query(ctx1, "first turn"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Turn 2: mira's conversation window expired and a brand-new Realtime
+	// session started (different session_id), but it's still the same
+	// speaker asking a follow-up.
+	responseID = "resp_2"
+	ctx2 := WithCallContext(context.Background(), "sess_realtime_2_after_timeout", "query_foundry_iq_manuals")
+	ctx2 = WithConversationKey(ctx2, "dcasati")
+	if _, err := client.Query(ctx2, "second turn, different Realtime session"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bodies) != 2 {
+		t.Fatalf("expected 2 requests, got %d", len(bodies))
+	}
+	var second struct {
+		PreviousResponseID string `json:"previous_response_id"`
+	}
+	if err := json.Unmarshal([]byte(bodies[1]), &second); err != nil {
+		t.Fatal(err)
+	}
+	if second.PreviousResponseID != "resp_1" {
+		t.Fatalf("expected chaining by speaker despite different session_id, got previous_response_id=%q", second.PreviousResponseID)
+	}
+}
+
+
 func TestQueryDirectEndpointNeverSendsPreviousResponseID(t *testing.T) {
 	var bodies []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

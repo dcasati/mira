@@ -31,19 +31,22 @@ func (f *fakeAzureFactory) NewSession(context.Context) (AzureSession, error) {
 }
 
 type fakeSession struct {
-	id     string
-	asks   int
-	texts  int
-	closed bool
+	id             string
+	asks           int
+	texts          int
+	closed         bool
+	lastSpeakerCtx string
 }
 
 func (s *fakeSession) ID() string { return s.id }
-func (s *fakeSession) AskAudio(context.Context, []int16, int, ToolInterims) ([]int16, int, error) {
+func (s *fakeSession) AskAudio(ctx context.Context, _ []int16, _ int, _ ToolInterims) ([]int16, int, error) {
 	s.asks++
+	s.lastSpeakerCtx = SpeakerFromContext(ctx)
 	return []int16{1, 2, 3}, audio.AzureSampleRate, nil
 }
-func (s *fakeSession) AskText(context.Context, string) (string, error) {
+func (s *fakeSession) AskText(ctx context.Context, _ string) (string, error) {
 	s.texts++
+	s.lastSpeakerCtx = SpeakerFromContext(ctx)
 	return "text reply", nil
 }
 func (s *fakeSession) Close(context.Context) error {
@@ -95,6 +98,9 @@ func TestActivationAndFollowupUseSameSession(t *testing.T) {
 	}
 	if azure.session.asks != 2 {
 		t.Fatalf("asks = %d", azure.session.asks)
+	}
+	if azure.session.lastSpeakerCtx != "alice" {
+		t.Fatalf("lastSpeakerCtx = %q, want %q (Manager must attach the speaker to ctx so Foundry session-reuse can key on it)", azure.session.lastSpeakerCtx, "alice")
 	}
 }
 
@@ -262,6 +268,9 @@ func TestTextActivationAndFollowupUseSameSession(t *testing.T) {
 	}
 	if tx.textCount != 2 {
 		t.Fatalf("text replies = %d", tx.textCount)
+	}
+	if azure.session.lastSpeakerCtx != "alice" {
+		t.Fatalf("lastSpeakerCtx = %q, want %q (Manager must attach the speaker to ctx so Foundry session-reuse can key on it)", azure.session.lastSpeakerCtx, "alice")
 	}
 }
 

@@ -11,7 +11,17 @@ import (
 )
 
 type Config struct {
-	WakeWord            string
+	WakeWord string
+	// ConversationTimeout is how long mira waits after the last activity
+	// before auto-expiring an idle conversation. Default raised from 45s
+	// to 120s on 2026-08-17: a cold Foundry hosted-agent call
+	// (query_foundry_iq_manuals against operator-persona-agent) measured
+	// 35-56s end to end, which meant the conversation was expiring at or
+	// before the answer even came back, leaving no window for a natural
+	// follow-up question. See internal/foundryiq/client.go's Query doc
+	// comment for the companion fix (chaining previous_response_id by
+	// speaker, which survives this timeout resetting the Realtime
+	// session).
 	ConversationTimeout time.Duration
 	WhisperModelPath    string
 	MaxRXSeconds        int
@@ -61,7 +71,7 @@ type Config struct {
 func Load() (Config, error) {
 	cfg := Config{
 		WakeWord:                      env("MIRA_WAKE_WORD", "MIRA,OPERATOR"),
-		ConversationTimeout:           durationEnv("MIRA_CONVERSATION_TIMEOUT", 45*time.Second),
+		ConversationTimeout:           durationEnv("MIRA_CONVERSATION_TIMEOUT", 120*time.Second),
 		WhisperModelPath:              os.Getenv("MIRA_WHISPER_MODEL_PATH"),
 		MaxRXSeconds:                  intEnv("MIRA_MAX_RX_SECONDS", 60),
 		MaxTXSeconds:                  intEnv("MIRA_MAX_TX_SECONDS", 60),

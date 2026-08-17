@@ -137,6 +137,8 @@ func (m *Manager) HandleTransmission(ctx context.Context, t Transmission) error 
 		return err
 	}
 
+	ctx = WithSpeaker(ctx, t.Speaker)
+
 	m.mu.Lock()
 	m.conv.Busy = true
 	m.mu.Unlock()
@@ -201,6 +203,8 @@ func (m *Manager) HandleTextMessage(ctx context.Context, msg TextMessage) error 
 	if err != nil {
 		return err
 	}
+
+	ctx = WithSpeaker(ctx, msg.Speaker)
 
 	m.mu.Lock()
 	m.conv.Busy = true

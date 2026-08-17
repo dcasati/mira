@@ -600,7 +600,19 @@ func (s *RealtimeSession) runTool(ctx context.Context, call functionCall, textIn
 		return s.sendZelloChat(ctx, call.Arguments, textInterim)
 	}
 	if s.foundryIQ != nil && call.Name == "query_foundry_iq_manuals" {
-		return s.foundryIQ.Run(foundryiq.WithCallContext(ctx, s.id, call.Name), call.Name, call.Arguments)
+		fctx := foundryiq.WithCallContext(ctx, s.id, call.Name)
+		// Prefer the durable Zello speaker over s.id (this Realtime
+		// session's own, ephemeral, ID) for Foundry session-reuse
+		// chaining: s.id changes every time MIRA_CONVERSATION_TIMEOUT
+		// expires and a new conversation/Realtime session starts, but the
+		// same person asking a follow-up should still warm-start against
+		// their own prior Foundry session. See foundryiq.WithConversationKey.
+		convKey := conversation.SpeakerFromContext(ctx)
+		if convKey == "" {
+			convKey = s.id
+		}
+		fctx = foundryiq.WithConversationKey(fctx, convKey)
+		return s.foundryIQ.Run(fctx, call.Name, call.Arguments)
 	}
 	if s.telemetry != nil {
 		return s.telemetry.Run(ctx, call.Name, call.Arguments)

@@ -24,8 +24,9 @@ const TokenScope = "https://ai.azure.com/.default"
 type contextKey string
 
 const (
-	sessionIDContextKey contextKey = "foundryiq.session_id"
-	toolContextKey      contextKey = "foundryiq.tool"
+	sessionIDContextKey       contextKey = "foundryiq.session_id"
+	toolContextKey            contextKey = "foundryiq.tool"
+	conversationKeyContextKey contextKey = "foundryiq.conversation_key"
 )
 
 // Config points mira at a Foundry hosted agent (operator-persona-agent)
@@ -69,6 +70,22 @@ type Config struct {
 func WithCallContext(ctx context.Context, sessionID, tool string) context.Context {
 	ctx = context.WithValue(ctx, sessionIDContextKey, sessionID)
 	return context.WithValue(ctx, toolContextKey, tool)
+}
+
+// WithConversationKey attaches a durable identity (e.g. the Zello speaker)
+// to use for chaining previous_response_id across turns of the same
+// real-world conversation, distinct from the session_id set by
+// WithCallContext (which is the ephemeral Realtime WS session ID, used
+// only for log correlation with the surrounding azure.* log lines).
+//
+// This distinction matters because mira's own conversation window
+// (MIRA_CONVERSATION_TIMEOUT) resets the Realtime session on every expiry,
+// so session_id changes far more often than the human conversation
+// actually turns over. Query() prefers this key when present and falls
+// back to the session_id from WithCallContext otherwise, so callers (and
+// existing tests) that only call WithCallContext keep working.
+func WithConversationKey(ctx context.Context, key string) context.Context {
+	return context.WithValue(ctx, conversationKeyContextKey, key)
 }
 
 type Client struct {
@@ -179,9 +196,14 @@ func (c Config) Validate() error {
 // question itself.
 //
 // On the Foundry path, Query chains previous_response_id across turns of
-// the same mira conversation (keyed by the session_id set via
-// WithCallContext) so Foundry reuses the same hosted-agent session/sandbox
-// instead of cold-starting a new one on every turn. The DirectEndpoint
+// the same real-world conversation so Foundry reuses the same
+// hosted-agent session/sandbox instead of cold-starting a new one on
+// every turn. It's keyed by WithConversationKey when the caller set one
+// (mira sets this to the Zello speaker, since that's durable across
+// mira's own MIRA_CONVERSATION_TIMEOUT resets -- see that function's doc
+// comment for why the session_id from WithCallContext is NOT durable
+// enough for this), falling back to the WithCallContext session_id
+// otherwise (e.g. existing tests that only set that). The DirectEndpoint
 // (AKS) path never sets or reads previous_response_id -- operator-agent-aks
 // has no per-call sandbox to warm up, and its request body is left exactly
 // as before.
@@ -193,7 +215,10 @@ func (c *Client) Query(ctx context.Context, question string) (QueryResult, error
 
 	direct := c.cfg.DirectEndpoint != ""
 
-	convID := contextString(ctx, sessionIDContextKey)
+	convID := contextString(ctx, conversationKeyContextKey)
+	if convID == "" {
+		convID = contextString(ctx, sessionIDContextKey)
+	}
 	var previousResponseID string
 	if !direct && convID != "" {
 		previousResponseID = c.lookupPreviousResponseID(convID)
