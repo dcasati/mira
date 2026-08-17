@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployment topology on Azure — Mira</title>
+<style>
+:root{
+  --blue:#0d6efd; --blue-dark:#0a58ca; --ink:#1a1a2e; --muted:#4d5561; --soft-muted:#636b79;
+  --border:#dfe3ea; --panel-bg:#f6f8fb; --card-bg:#ffffff;
+  --green-label:#0f9d58; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%}
+body{background:#e9ecf1;font-family:var(--sans);display:flex;align-items:center;justify-content:center}
+.stage{
+  width:1280px;height:720px;background:#ffffff;position:relative;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.18);
+}
+.topbar{position:absolute;top:0;left:0;right:0;height:6px;background:var(--blue)}
+.content{padding:26px 56px 0 56px}
+.eyebrow{color:var(--blue);font-weight:800;font-size:12px;letter-spacing:.08em;margin-bottom:6px}
+h1{font-size:30px;font-weight:800;color:var(--ink);margin:0 0 8px 0;letter-spacing:-.01em}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.4;max-width:960px;margin:0 0 12px 0}
+.rule{width:80px;height:3px;background:var(--blue);margin-bottom:16px}
+
+.frame{
+  margin:0 56px; border:1px solid var(--border); border-radius:14px; padding:16px 18px 18px 18px;
+}
+.frame-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.frame-head h2{font-size:16px;font-weight:800;color:var(--ink);margin:0}
+
+.layout{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;align-items:start}
+
+.col-label{color:var(--soft-muted);font-weight:800;font-size:10px;letter-spacing:.08em;margin-bottom:8px}
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.svc-card{
+  border:1px solid var(--border);border-radius:9px;background:var(--card-bg);
+  padding:13px 14px;display:flex;gap:11px;align-items:flex-start;
+}
+.svc-icon{flex:none;width:34px;height:34px;border-radius:8px}
+.svc-title{font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:3px}
+.svc-desc{font-size:11.5px;color:var(--muted);line-height:1.35}
+
+.cluster-box{border:1px solid var(--border);border-radius:12px;background:var(--panel-bg);padding:18px 20px 20px 20px;margin-bottom:18px}
+.cluster-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cluster-head h3{font-size:15.5px;font-weight:800;color:var(--ink);margin:0}
+
+.ns-label{
+  font-size:11px;font-weight:800;letter-spacing:.06em;margin-bottom:9px;display:flex;align-items:center;gap:8px;
+}
+.ns-label.blue{color:var(--blue)}
+.ns-label.teal{color:var(--green-label)}
+.ns-label .mono{font-family:Consolas,monospace;font-weight:700;color:var(--soft-muted);font-size:11px}
+
+.pod-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
+.pod-row.single{grid-template-columns:1fr}
+.pod-card{
+  border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:8px;background:#fff;
+  padding:13px 16px;
+}
+.pod-card.teal{border-left-color:var(--green-label)}
+.pod-title{font-weight:800;font-size:14px;color:var(--ink);margin-bottom:3px}
+.pod-desc{font-size:12px;color:var(--muted);line-height:1.35}
+
+.foundry-box{border:1px solid var(--border);border-radius:12px;background:var(--panel-bg);padding:16px 20px 18px 20px}
+.foundry-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.foundry-head h3{font-size:14.5px;font-weight:800;color:var(--ink);margin:0}
+.foundry-card{border:1px solid var(--border);border-left:4px solid #8a2be2;border-radius:8px;background:#fff;padding:13px 16px}
+
+.footer{position:absolute;bottom:0;left:0;right:0;padding:12px 56px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)}
+.footer-text{color:var(--soft-muted);font-size:11px}
+.footer-page{color:var(--soft-muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="topbar"></div>
+  <div class="content">
+    <div class="eyebrow">ARCHITECTURE</div>
+    <h1>Deployment topology on Azure</h1>
+    <p class="subtitle">Mira runs as two small services inside a customer's existing AKS cluster, plus one hosted agent in Azure AI Foundry — leaning entirely on Azure platform services the tenant already has, with no delegated auth and no standing secrets.</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="frame">
+    <div class="frame-head">
+      <!-- key icon -->
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15.5 8.5a3.5 3.5 0 1 1-3.5-3.5m3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m3.5-3.5H21m-9.5 3.5L4 19.5M4 19.5V17m0 2.5h2.5" stroke="#f0ad0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="8.5" r="3.5" fill="#ffcc33"/></svg>
+      <h2>Azure subscription — customer tenant</h2>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: platform services -->
+      <div>
+        <div class="col-label">AZURE PLATFORM SERVICES</div>
+        <div class="svc-grid">
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-entra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1a8fe3"/><stop offset="1" stop-color="#0f5fb8"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-entra)"/>
+            <circle cx="18" cy="14" r="5" fill="#fff"/>
+            <path d="M9 27c1.2-5 4.7-8 9-8s7.8 3 9 8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div><div class="svc-title">Microsoft Entra ID</div><div class="svc-desc">Validates every app-only token — workload identity, no delegated auth</div></div>
+        </div>
+
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-acr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b9ef5"/><stop offset="1" stop-color="#1a63c9"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-acr)"/>
+            <rect x="9" y="12" width="8" height="8" rx="1.5" fill="#fff"/>
+            <rect x="19" y="16" width="8" height="8" rx="1.5" fill="#cfe6ff"/>
+            <rect x="14" y="20" width="8" height="8" rx="1.5" fill="#fff" opacity=".92"/>
+          </svg>
+          <div><div class="svc-title">Container Registry</div><div class="svc-desc">mira-gateway and operator-agent images, digest-pinned</div></div>
+        </div>
+
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-mon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fa9f5"/><stop offset="1" stop-color="#0d6efd"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-mon)"/>
+            <circle cx="18" cy="19" r="8" fill="none" stroke="#fff" stroke-width="2"/>
+            <path d="M18 19 L22 14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="18" cy="19" r="1.6" fill="#fff"/>
+          </svg>
+          <div><div class="svc-title">Azure Monitor</div><div class="svc-desc">App Insights traces, pod logs — OTEL spans + kubectl logs</div></div>
+        </div>
+
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-redis" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0554a"/><stop offset="1" stop-color="#c62828"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-redis)"/>
+            <rect x="11" y="20" width="6" height="6" rx="1" fill="#fff"/>
+            <rect x="18" y="20" width="6" height="6" rx="1" fill="#fff" opacity=".85"/>
+            <rect x="14.5" y="13" width="6" height="6" rx="1" fill="#fff" opacity=".95"/>
+          </svg>
+          <div><div class="svc-title">Azure Managed Redis</div><div class="svc-desc">Governed ontology schema cache, Entra-only auth, no access keys</div></div>
+        </div>
+
+        <div class="svc-card">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-fabric" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2fd4c4"/><stop offset="1" stop-color="#1379d6"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-fabric)"/>
+            <path d="M10 24c2-7 6-11 8-11s6 4 8 11" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M12 24c1.6-5.4 4.6-8.4 6-8.4s4.4 3 6 8.4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".65"/>
+          </svg>
+          <div><div class="svc-title">Microsoft Fabric</div><div class="svc-desc">Ontology metadata + OneLake — source of truth, GitHub-governed</div></div>
+        </div>
+
+        <div class="svc-card" style="margin-bottom:0">
+          <svg class="svc-icon" viewBox="0 0 36 36"><defs><linearGradient id="g-foundry" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b06ce8"/><stop offset="1" stop-color="#5b3df0"/></linearGradient></defs>
+            <rect width="36" height="36" rx="8" fill="url(#g-foundry)"/>
+            <path d="M18 9l3 6 6.5 1-4.8 4.4 1.2 6.5L18 23.8l-5.9 3.1 1.2-6.5L8.5 16l6.5-1z" fill="#fff"/>
+          </svg>
+          <div><div class="svc-title">Azure AI Foundry</div><div class="svc-desc">Hosts operator-persona-agent with OTEL tracing + governance</div></div>
+        </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: AKS cluster + Foundry -->
+      <div>
+        <div class="cluster-box">
+          <div class="cluster-head">
+            <svg width="24" height="24" viewBox="0 0 36 36"><defs><linearGradient id="g-aks" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4d9eeb"/><stop offset="1" stop-color="#1857c4"/></linearGradient></defs>
+              <rect width="36" height="36" rx="8" fill="url(#g-aks)"/>
+              <path d="M18 8l8.7 5v10l-8.7 5-8.7-5V13z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
+              <circle cx="18" cy="18" r="3.6" fill="#fff"/>
+              <path d="M18 8v3.4M26.7 13l-2.9 1.7M26.7 23l-2.9-1.7M18 28v-3.4M9.3 23l2.9-1.7M9.3 13l2.9 1.7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <h3>Azure Kubernetes Service — aks-mira-eastus2</h3>
+          </div>
+
+          <div class="ns-label blue">NAMESPACE: MIRA</div>
+          <div class="pod-row single">
+            <div class="pod-card">
+              <div class="pod-title">mira-gateway</div>
+              <div class="pod-desc">Go · Zello push-to-talk gateway · Azure OpenAI Realtime sessions</div>
+            </div>
+          </div>
+
+          <div class="ns-label teal" style="margin-top:14px">NAMESPACE: OPERATOR-AGENT-AKS</div>
+          <div class="pod-row single">
+            <div class="pod-card teal">
+              <div class="pod-title">operator-agent-aks</div>
+              <div class="pod-desc">Python · ontology-grounded agent · reads Redis cache, OneLake, falls back to Fabric</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="foundry-box">
+          <div class="foundry-head">
+            <svg width="22" height="22" viewBox="0 0 36 36"><rect width="36" height="36" rx="8" fill="#f3ecfc"/><path d="M18 9l3 6 6.5 1-4.8 4.4 1.2 6.5L18 23.8l-5.9 3.1 1.2-6.5L8.5 16l6.5-1z" fill="#8a2be2"/></svg>
+            <h3>Azure AI Foundry — parallel hosted-agent deployment</h3>
+          </div>
+          <div class="foundry-card">
+            <div class="pod-title">operator-persona-agent</div>
+            <div class="pod-desc">Same grounding logic, hosted (not self-managed) · reference implementation with built-in OTEL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-text">Mira · Deployment topology — AKS add-on + Azure platform services</div>
+    <div class="footer-page">Appendix A</div>
+  </div>
+</div>
+</body>
+</html>
