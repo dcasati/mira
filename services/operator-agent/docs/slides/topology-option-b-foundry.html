@@ -47,7 +47,7 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
 .svc-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:2px}
 .svc-desc{font-size:11px;color:var(--muted);line-height:1.3}
 
-.cluster-box{border:1px solid var(--border);border-radius:12px;background:var(--panel-bg);padding:15px 18px 16px 18px;margin-bottom:14px}
+.cluster-box{border:1.5px dashed var(--border);border-radius:12px;background:var(--panel-bg);padding:15px 18px 16px 18px;margin-bottom:14px}
 .cluster-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
 .cluster-head h3{font-size:14px;font-weight:800;color:var(--ink);margin:0}
 
@@ -68,10 +68,15 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
 .pod-title{font-weight:800;font-size:13px;color:var(--ink);margin-bottom:2px}
 .pod-desc{font-size:11px;color:var(--muted);line-height:1.3}
 
-.foundry-box{border:1px solid var(--border);border-radius:12px;background:var(--panel-bg);padding:13px 18px 15px 18px}
+.foundry-box{border:1.5px solid #8a2be2;border-radius:12px;background:#faf7ff;padding:13px 18px 15px 18px;margin-bottom:14px}
 .foundry-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .foundry-head h3{font-size:13.5px;font-weight:800;color:var(--ink);margin:0}
 .foundry-card{border:1px solid var(--border);border-left:4px solid #8a2be2;border-radius:8px;background:#fff;padding:10px 14px}
+
+.status-badge{display:inline-flex;align-items:center;font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:999px;margin-left:8px}
+.status-badge.live{background:#e6f7ee;color:#0f9d58}
+.status-badge.proposed{background:#fdf1e0;color:#c9760a}
+.aca-note{font-size:10.5px;color:var(--soft-muted);font-style:italic;margin-top:8px;line-height:1.35}
 
 .footer{position:absolute;bottom:0;left:0;right:0;padding:9px 56px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)}
 .footer-text{color:var(--soft-muted);font-size:10.5px}
@@ -87,7 +92,7 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
     <span class="option-pill alt">OPTION B &middot; FOUNDRY-HOSTED</span>
     <div class="eyebrow" style="color:#8a2be2">ARCHITECTURE</div>
     <h1>Deployment topology — Foundry Hosted</h1>
-    <p class="subtitle">A fully managed alternative to Option A: the ontology-grounded agent runs unchanged as an Azure AI Foundry hosted agent &mdash; already live and tested. The radio gateway on Azure Container Apps is the proposed pairing for this path (not yet deployed), since mira-gateway has no cluster-specific dependencies and can run on either platform. Same Redis-first, Fabric-fallback logic, same governed schema cache, same Entra-only auth on the agent side.</p>
+    <p class="subtitle">A fully managed alternative to Option A: the ontology-grounded agent runs unchanged as an Azure AI Foundry hosted agent &mdash; already live and tested, on Foundry's own managed compute (not a resource we provision). The radio gateway is a separate component; Azure Container Apps is our proposed (not yet deployed) home for it, since mira-gateway has no cluster-specific dependencies and can run on either platform. Same Redis-first, Fabric-fallback logic, same governed schema cache, same Entra-only auth on the agent side.</p>
     <div class="rule" style="background:#8a2be2"></div>
   </div>
 
@@ -129,10 +134,21 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
       </div>
 
       <div>
+        <div class="foundry-box">
+          <div class="foundry-head">
+            <svg id="uuid-62050117-635e-42ed-902b-2ba2efd9a722" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 18 18"><defs><linearGradient id="uuid-5a7bd7fa-6937-44bd-a5ba-e23eddbb6d35" x1="10.91" y1="13.66" x2="13.62" y2="13.66" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#302ec9" /><stop offset=".12" stop-color="#151698" /><stop offset=".25" stop-color="#0a0b7e" /><stop offset=".43" stop-color="#090c7f" /><stop offset=".51" stop-color="#141698" /><stop offset=".61" stop-color="#282ac4" /><stop offset=".77" stop-color="#8e8ff4" /><stop offset=".85" stop-color="#a7a6f7" /><stop offset=".91" stop-color="#cacafb" /><stop offset="1" stop-color="#fff" /></linearGradient><linearGradient id="uuid-a9b2ac78-bff0-475d-89df-2c97f2122f93" x1="12.26" y1="8.32" x2="12.26" y2="18.23" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset=".02" stop-color="#201ba6" /><stop offset=".64" stop-color="#2d29c7" /><stop offset="1" stop-color="#201ba6" /></linearGradient><linearGradient id="uuid-03b3b70c-1c8d-4b3f-9935-d9da2b20de2f" x1="14.19" y1="8.27" x2="14.19" y2="14.47" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3530c3" /><stop offset=".5" stop-color="#6d71d1" /><stop offset=".97" stop-color="#c0bff5" /><stop offset="1" stop-color="#e3e4ff" /></linearGradient><linearGradient id="uuid-cabc8ec9-3293-44b8-a33b-70823f583b30" x1="6.51" y1="3" x2="6.51" y2="19.15" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#302ec9" /><stop offset=".45" stop-color="#302ec9" /><stop offset=".95" stop-color="#cacafb" /><stop offset="1" stop-color="#7f7eaf" /></linearGradient></defs><path d="M11.96,11.68s.07-.1.07-.24v-3.87c0-.85.66-1.76,1.59-2.03-.06-.19-.64-2.11-.81-2.65-.17-.56-.67-1.9-1.29-1.9,0,0,0,0-.01,0h0s-.09.05-.13.13c-.32.58-.46,3.02-.46,4.84v2.26c.27.97.91,3.22.96,3.35,0,0,.05.1.09.1h0Z" fill="url(#uuid-5a7bd7fa-6937-44bd-a5ba-e23eddbb6d35)" /><path d="M11.96,11.68s.07-.1.07-.24v-3.87c0-.85.66-1.76,1.59-2.03-.06-.19-.64-2.11-.81-2.65-.17-.56-.67-1.9-1.29-1.9,0,0,0,0-.01,0h0s-.09.05-.13.13c-.32.58-.46,3.02-.46,4.84v2.26c.27.97.91,3.22.96,3.35,0,0,.05.1.09.1h0Z" fill="url(#uuid-a9b2ac78-bff0-475d-89df-2c97f2122f93)" /><path d="M16.01,5.46h-1.81c-1.21,0-2.17,1.09-2.17,2.11v3.87c0,.14-.04.24-.07.24s-.09-.1-.09-.1c0,0,.07.21.17.21h1.98c.62,0,2.48-.61,2.48-2.52v-3.25c0-.41-.24-.55-.49-.55Z" fill="url(#uuid-03b3b70c-1c8d-4b3f-9935-d9da2b20de2f)" /><path d="M2.34,17h5.38c2.35,0,3.2-2.03,3.2-3.81v-7.23c0-2.08.19-4.97.61-4.97h-3.23c-.77,0-1.43.82-2.18,2.48-.75,1.66-4.36,11.87-4.52,12.36-.26.79-.02,1.16.74,1.16Z" fill="url(#uuid-cabc8ec9-3293-44b8-a33b-70823f583b30)" /></svg>
+            <h3>Azure AI Foundry — hosted agent compute<span class="status-badge live">LIVE &middot; TESTED</span></h3>
+          </div>
+          <div class="foundry-card">
+            <div class="pod-title">operator-persona-agent</div>
+            <div class="pod-desc">Identical grounding logic and Redis/Fabric fallback as the AKS variant &mdash; hosted, managed, and scaled entirely by Foundry's own runtime (Microsoft-managed infrastructure, not a resource we deploy or see in the subscription)</div>
+          </div>
+        </div>
+
         <div class="cluster-box">
           <div class="cluster-head">
             <span style="display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 18 18"><defs><linearGradient id="a3a44093-b157-426e-a8fe-cec9f9c23978" x1="11.729" y1="4.88" x2="11.729" y2="13.099" gradientUnits="userSpaceOnUse"><stop offset="0.001" stop-color="#773adc" /><stop offset="0.528" stop-color="#6635bb" /><stop offset="1" stop-color="#552f99" /></linearGradient><linearGradient id="ad838859-03f4-472f-81bc-ebc921d71335" x1="6.35" y1="13.914" x2="6.35" y2="4.198" gradientUnits="userSpaceOnUse"><stop offset="0.001" stop-color="#773adc" /><stop offset="0.307" stop-color="#793ddd" /><stop offset="0.532" stop-color="#8046e1" /><stop offset="0.731" stop-color="#8c56e7" /><stop offset="0.915" stop-color="#9c6def" /><stop offset="1" stop-color="#a67af4" /></linearGradient></defs><g id="ae82470d-7a6c-4dfe-8533-59d8ff948629"><g><path d="M8.617,8.644H.639V1.784A1.16,1.16,0,0,1,1.788.624H8.617ZM1.63,7.653h6V1.594H1.788a.158.158,0,0,0-.158.158h0Z" fill="#949494" /><path d="M17.5,8.644H9.523V.624h6.828A1.16,1.16,0,0,1,17.5,1.784Zm-6.987-.991h6V1.784a.157.157,0,0,0-.123-.187.2.2,0,0,0-.035,0H10.513Z" fill="#949494" /><path d="M8.617,17.485H1.788A1.149,1.149,0,0,1,.639,16.347V9.476H8.617ZM1.63,10.467v5.88a.158.158,0,0,0,.158.158H7.626V10.467Z" fill="#949494" /><path d="M16.351,17.485H9.523V9.476H17.5v6.871A1.149,1.149,0,0,1,16.351,17.485Zm-5.838-.991h5.838a.157.157,0,0,0,.158-.158V10.467h-6Z" fill="#949494" /><path d="M14.6,6.294a.294.294,0,0,0-.2-.278L9.044,4.205A.128.128,0,0,0,9,4.2H9a.132.132,0,0,0-.133.133v9.445A.133.133,0,0,0,9,13.911H9a.138.138,0,0,0,.049-.01l5.365-2.145a.292.292,0,0,0,.184-.272Z" fill="url(#a3a44093-b157-426e-a8fe-cec9f9c23978)" /><path d="M8.966,4.2l-5.293.966a.161.161,0,0,0-.13.158V12.63a.16.16,0,0,0,.126.157L8.962,13.91a.161.161,0,0,0,.191-.121.22.22,0,0,0,0-.036V4.358A.16.16,0,0,0,9,4.2.163.163,0,0,0,8.966,4.2Z" fill="url(#ad838859-03f4-472f-81bc-ebc921d71335)" /><path d="M6.52,5.656v6.8l1.842.3V5.335Zm-2.262.367v5.955l1.6.326V5.754Z" fill="#b796f9" opacity="0.5" /></g></g></svg></span>
-            <h3>Azure Container Apps — mira-gateway-env <span style="font-weight:600;color:var(--muted);font-size:11px">(proposed pairing)</span></h3>
+            <h3>Azure Container Apps — mira-gateway-env<span class="status-badge proposed">PROPOSED &middot; NOT YET BUILT</span></h3>
           </div>
 
           <div class="ns-label blue">CONTAINER APP: MIRA-GATEWAY</div>
@@ -150,17 +166,7 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
               <div class="pod-desc">mira-gateway calls operator-persona-agent's public Responses API endpoint &mdash; no in-cluster agent to deploy, patch, or scale</div>
             </div>
           </div>
-        </div>
-
-        <div class="foundry-box">
-          <div class="foundry-head">
-            <svg id="uuid-62050117-635e-42ed-902b-2ba2efd9a722" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 18 18"><defs><linearGradient id="uuid-5a7bd7fa-6937-44bd-a5ba-e23eddbb6d35" x1="10.91" y1="13.66" x2="13.62" y2="13.66" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#302ec9" /><stop offset=".12" stop-color="#151698" /><stop offset=".25" stop-color="#0a0b7e" /><stop offset=".43" stop-color="#090c7f" /><stop offset=".51" stop-color="#141698" /><stop offset=".61" stop-color="#282ac4" /><stop offset=".77" stop-color="#8e8ff4" /><stop offset=".85" stop-color="#a7a6f7" /><stop offset=".91" stop-color="#cacafb" /><stop offset="1" stop-color="#fff" /></linearGradient><linearGradient id="uuid-a9b2ac78-bff0-475d-89df-2c97f2122f93" x1="12.26" y1="8.32" x2="12.26" y2="18.23" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset=".02" stop-color="#201ba6" /><stop offset=".64" stop-color="#2d29c7" /><stop offset="1" stop-color="#201ba6" /></linearGradient><linearGradient id="uuid-03b3b70c-1c8d-4b3f-9935-d9da2b20de2f" x1="14.19" y1="8.27" x2="14.19" y2="14.47" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3530c3" /><stop offset=".5" stop-color="#6d71d1" /><stop offset=".97" stop-color="#c0bff5" /><stop offset="1" stop-color="#e3e4ff" /></linearGradient><linearGradient id="uuid-cabc8ec9-3293-44b8-a33b-70823f583b30" x1="6.51" y1="3" x2="6.51" y2="19.15" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#302ec9" /><stop offset=".45" stop-color="#302ec9" /><stop offset=".95" stop-color="#cacafb" /><stop offset="1" stop-color="#7f7eaf" /></linearGradient></defs><path d="M11.96,11.68s.07-.1.07-.24v-3.87c0-.85.66-1.76,1.59-2.03-.06-.19-.64-2.11-.81-2.65-.17-.56-.67-1.9-1.29-1.9,0,0,0,0-.01,0h0s-.09.05-.13.13c-.32.58-.46,3.02-.46,4.84v2.26c.27.97.91,3.22.96,3.35,0,0,.05.1.09.1h0Z" fill="url(#uuid-5a7bd7fa-6937-44bd-a5ba-e23eddbb6d35)" /><path d="M11.96,11.68s.07-.1.07-.24v-3.87c0-.85.66-1.76,1.59-2.03-.06-.19-.64-2.11-.81-2.65-.17-.56-.67-1.9-1.29-1.9,0,0,0,0-.01,0h0s-.09.05-.13.13c-.32.58-.46,3.02-.46,4.84v2.26c.27.97.91,3.22.96,3.35,0,0,.05.1.09.1h0Z" fill="url(#uuid-a9b2ac78-bff0-475d-89df-2c97f2122f93)" /><path d="M16.01,5.46h-1.81c-1.21,0-2.17,1.09-2.17,2.11v3.87c0,.14-.04.24-.07.24s-.09-.1-.09-.1c0,0,.07.21.17.21h1.98c.62,0,2.48-.61,2.48-2.52v-3.25c0-.41-.24-.55-.49-.55Z" fill="url(#uuid-03b3b70c-1c8d-4b3f-9935-d9da2b20de2f)" /><path d="M2.34,17h5.38c2.35,0,3.2-2.03,3.2-3.81v-7.23c0-2.08.19-4.97.61-4.97h-3.23c-.77,0-1.43.82-2.18,2.48-.75,1.66-4.36,11.87-4.52,12.36-.26.79-.02,1.16.74,1.16Z" fill="url(#uuid-cabc8ec9-3293-44b8-a33b-70823f583b30)" /></svg>
-            <h3>Azure AI Foundry — the only agent compute</h3>
-          </div>
-          <div class="foundry-card">
-            <div class="pod-title">operator-persona-agent</div>
-            <div class="pod-desc">Identical grounding logic and Redis/Fabric fallback as the AKS variant &mdash; hosted, managed, and scaled by Foundry itself</div>
-          </div>
+          <div class="aca-note">Note: Container Apps hosts only the gateway component above. It is a separate, independently-proposed compute choice for mira-gateway &mdash; not the mechanism behind Foundry's own agent hosting.</div>
         </div>
       </div>
     </div>
