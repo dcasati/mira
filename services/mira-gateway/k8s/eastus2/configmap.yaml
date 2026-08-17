@@ -22,14 +22,22 @@ data:
   MIRA_TELEMETRY_DEVICE_COLUMN: "DeviceId"
   MIRA_TELEMETRY_DEFAULT_LOOKBACK: "15m"
   MIRA_TELEMETRY_MAX_ROWS: "20"
-  # This cluster (aks-mira-eastus2) runs in the same region as
-  # operator-agent-aks, so mira calls it directly in-cluster instead of
-  # going through Foundry's hosted-agent gateway -- measured to add
-  # ~16-20s of overhead beyond the agent's own ~11.6s of actual work (see
-  # internal/foundryiq/client.go's Config doc comment). FOUNDRY_PROJECT_ENDPOINT/
-  # FOUNDRY_IQ_AGENT_NAME are intentionally omitted: FOUNDRY_IQ_DIRECT_ENDPOINT
-  # takes priority in the Go client when set.
-  FOUNDRY_IQ_DIRECT_ENDPOINT: "http://operator-agent-aks.operator-agent-aks.svc.cluster.local:8088"
+  # 2026-08-17: temporarily switched this live cluster to call the
+  # Foundry-hosted operator-persona-agent (Option B) directly, to test
+  # that path end-to-end instead of the in-cluster operator-agent-aks
+  # (Option A) it normally uses. Known tradeoff: this adds ~16-20s of
+  # gateway overhead on top of the agent's own ~11.6s of actual work (see
+  # internal/foundryiq/client.go's Config doc comment) -- pre-flight test
+  # via curl measured ~43s end-to-end for a simple question. mira-gateway's
+  # workload identity (id-mira-gateway) already has "Foundry User" on this
+  # project, so no RBAC changes were needed.
+  #
+  # To revert to the faster in-cluster path, remove
+  # FOUNDRY_PROJECT_ENDPOINT/FOUNDRY_IQ_AGENT_NAME below and restore:
+  #   FOUNDRY_IQ_DIRECT_ENDPOINT: "http://operator-agent-aks.operator-agent-aks.svc.cluster.local:8088"
+  # (FOUNDRY_IQ_DIRECT_ENDPOINT takes priority in the Go client when set.)
+  FOUNDRY_PROJECT_ENDPOINT: "https://admin-2434-resource.services.ai.azure.com/api/projects/admin-2434"
+  FOUNDRY_IQ_AGENT_NAME: "operator-persona-agent"
   FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
   HTTP_LISTEN_ADDR: ":8080"
   LOG_LEVEL: "DEBUG"
