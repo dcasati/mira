@@ -84,10 +84,10 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
 <div class="stage">
   <div class="topbar" style="background:#8a2be2"></div>
   <div class="content">
-    <span class="option-pill alt">OPTION B &middot; NO KUBERNETES REQUIRED</span>
+    <span class="option-pill alt">OPTION B &middot; FOUNDRY-HOSTED</span>
     <div class="eyebrow" style="color:#8a2be2">ARCHITECTURE</div>
     <h1>Deployment topology — Foundry Hosted</h1>
-    <p class="subtitle">For teams that don't have or don't want an AKS cluster: the ontology-grounded agent itself runs unchanged as an Azure AI Foundry hosted agent &mdash; already live and tested. The radio gateway on Azure Container Apps is the proposed pairing for this path (not yet deployed) since mira-gateway needs no cluster-specific features. Same Redis-first, Fabric-fallback logic, same governed schema cache, same Entra-only auth on the agent side.</p>
+    <p class="subtitle">A fully managed alternative to Option A: the ontology-grounded agent runs unchanged as an Azure AI Foundry hosted agent &mdash; already live and tested. The radio gateway on Azure Container Apps is the proposed pairing for this path (not yet deployed), since mira-gateway has no cluster-specific dependencies and can run on either platform. Same Redis-first, Fabric-fallback logic, same governed schema cache, same Entra-only auth on the agent side.</p>
     <div class="rule" style="background:#8a2be2"></div>
   </div>
 
@@ -143,7 +143,7 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
             </div>
           </div>
 
-          <div class="ns-label teal" style="margin-top:11px">NO SEPARATE OPERATOR-AGENT COMPUTE</div>
+          <div class="ns-label teal" style="margin-top:11px">OPERATOR AGENT RUNS IN FOUNDRY</div>
           <div class="pod-row single">
             <div class="pod-card teal">
               <div class="pod-title">Tool calls route directly to Foundry</div>
@@ -167,7 +167,7 @@ h1{font-size:27px;font-weight:800;color:var(--ink);margin:0 0 6px 0;letter-spaci
   </div>
 
   <div class="footer">
-    <div class="footer-text">Mira &middot; Option B &mdash; Foundry-hosted agent, no Kubernetes cluster required</div>
+    <div class="footer-text">Mira &middot; Option B &mdash; fully managed, Foundry-hosted agent</div>
     <div class="footer-page">Appendix A2</div>
   </div>
 </div>
