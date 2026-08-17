@@ -19,9 +19,9 @@
 html,body{width:100%;height:100%;margin:0}
 body{
   background:
-    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--purple) 12%, transparent), transparent 28%),
-    radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--blue) 10%, transparent), transparent 30%),
-    linear-gradient(135deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 88%, var(--soft)) 55%, var(--bg) 100%);
+    radial-gradient(circle at 12% 8%, rgba(163,113,247,0.12), transparent 28%),
+    radial-gradient(circle at 88% 84%, rgba(88,166,255,0.10), transparent 30%),
+    linear-gradient(135deg, var(--bg) 0%, rgb(29,31,36) 55%, var(--bg) 100%);
   color:var(--text); font-family:var(--sans); overflow:hidden;
 }
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
@@ -42,13 +42,13 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
 }
 .brand-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .scenario-rail{
-  border:1px solid color-mix(in srgb, var(--green) 42%, transparent);
-  background:linear-gradient(110deg, color-mix(in srgb, var(--green) 10%, transparent), color-mix(in srgb, var(--purple) 6%, transparent));
+  border:1px solid rgba(63,185,80,0.42);
+  background:linear-gradient(110deg, rgba(63,185,80,0.10), rgba(163,113,247,0.06));
   min-height:30px; color:var(--soft); white-space:nowrap; border-radius:999px; flex:none; align-items:center; gap:8px; padding:5px 12px; font-size:11px; display:flex;
 }
 .scenario-rail .label{color:var(--green); font-family:var(--mono); letter-spacing:.08em; text-transform:uppercase; font-size:9px; font-weight:800}
 .scenario-rail strong{color:#fff; font-weight:750}
-.scenario-rail .stage{color:var(--muted); border-left:1px solid #ffffff21; padding-left:8px}
+.scenario-rail .stage-label{color:var(--muted); border-left:1px solid #ffffff21; padding-left:8px}
 .shortcut{color:#7d8590; white-space:nowrap; font-size:11px}
 .top-actions{flex:1 1 0; justify-content:flex-end; align-items:center; gap:8px; display:flex}
 .small-button{
@@ -67,24 +67,22 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
   border:1px solid #ffffff12; position:absolute; inset:0;
 }
 .slide{
-  --accent:var(--purple); z-index:0; opacity:0; visibility:hidden; flex-direction:column;
-  padding:clamp(34px,4.3vw,68px); transition:opacity .26s,transform .33s cubic-bezier(.22,1,.36,1),visibility 0s linear .33s;
-  display:flex; position:absolute; inset:0; overflow:hidden; transform:translateX(34px) scale(.99);
+  --accent:var(--purple); flex-direction:column;
+  padding:clamp(34px,4.3vw,68px); display:none; position:absolute; inset:0; overflow:hidden;
 }
 .slide:before,.slide:after{z-index:-1; content:""; filter:blur(2px); pointer-events:none; border-radius:999px; position:absolute}
-.slide:before{aspect-ratio:1; background:radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 67%); width:48%; top:-22%; right:-12%}
+.slide:before{aspect-ratio:1; background:radial-gradient(circle, var(--accent-glow), transparent 67%); width:48%; top:-22%; right:-12%}
 .slide:after{aspect-ratio:1; background:radial-gradient(circle,#58a6ff1a,#0000 68%); width:52%; bottom:-38%; left:-22%}
-.slide.active{z-index:2; opacity:1; visibility:visible; transition-delay:0s; transform:translateX(0) scale(1)}
-.slide.was-active{transform:translateX(-34px) scale(.99)}
+.slide.active{display:flex; z-index:2}
 
 .eyebrow{
-  color:color-mix(in srgb, var(--accent) 76%, white); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent-eyebrow); letter-spacing:.12em; text-transform:uppercase;
   align-self:flex-start; align-items:center; gap:8px; margin-bottom:16px; font-size:clamp(11px,.82vw,14px); font-weight:750; display:inline-flex;
 }
 .eyebrow:before{content:""; background:currentColor; border-radius:999px; width:28px; height:2px}
 .display{letter-spacing:-.05em; max-width:960px; margin:0; font-size:clamp(38px,4.6vw,72px); font-weight:780; line-height:1.02}
 .gradient-text{
-  background:linear-gradient(110deg, #fff 4%, color-mix(in srgb, var(--accent) 78%, white) 48%, var(--purple) 95%);
+  background:linear-gradient(110deg, #fff 4%, var(--accent-gradient) 48%, var(--purple) 95%);
   color:transparent; -webkit-background-clip:text; background-clip:text;
 }
 .lede{max-width:760px; color:var(--soft); margin:22px 0 0; font-size:clamp(16px,1.3vw,21px); line-height:1.5}
@@ -93,7 +91,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
   border:1px solid var(--line); min-height:31px; color:var(--soft); background:#ffffff0b;
   border-radius:999px; align-items:center; padding:6px 12px; font-size:clamp(11px,.8vw,13px); font-weight:650; display:inline-flex;
 }
-.pill.accent{border-color:color-mix(in srgb, var(--accent) 55%, transparent); background:color-mix(in srgb, var(--accent) 14%, transparent); color:color-mix(in srgb, var(--accent) 68%, white)}
+.pill.accent{border-color:var(--accent-pill-border); background:var(--accent-pill-bg); color:var(--accent-pill-text)}
 
 .section-heading{z-index:2; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:clamp(20px,2.6vw,36px); display:flex; position:relative}
 .section-title{letter-spacing:-.035em; margin:0; font-size:clamp(28px,2.9vw,46px); font-weight:760; line-height:1.06}
@@ -113,7 +111,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
 .pain-num{
   flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center;
   font-family:var(--mono); font-weight:800; font-size:15px; color:#fff;
-  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, var(--purple)));
+  background:linear-gradient(135deg, var(--accent), var(--accent-chainbg));
 }
 .pain-t{font-weight:700; font-size:clamp(14px,1.1vw,17px); margin-bottom:4px}
 .pain-d{color:var(--muted); font-size:clamp(12px,.92vw,14px); line-height:1.45}
@@ -136,7 +134,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
 }
 .chain-num{
   font-family:var(--mono); font-weight:800; font-size:22px;
-  color:color-mix(in srgb, var(--accent) 70%, white);
+  color:var(--accent-num);
 }
 .chain-t{font-weight:700; font-size:clamp(13px,1vw,16px)}
 .chain-d{color:var(--muted); font-size:clamp(11.5px,.85vw,13.5px); line-height:1.4}
@@ -205,7 +203,7 @@ table.results td.ok{color:var(--green); font-weight:600}
     <div class="scenario-rail">
       <span class="label">Deck</span>
       <strong>Technical Demo</strong>
-      <span class="stage" id="stageLabel">Mission</span>
+      <span class="stage-label" id="stageLabel">Mission</span>
     </div>
     <div class="top-actions">
       <span class="shortcut">Space / arrows to navigate</span>
@@ -232,7 +230,7 @@ const SEQ_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAEUwAAAfECAIAAAAQy
 
 const slides = [
   {
-    stage: "Mission", accent: "var(--purple)",
+    stage: "Mission", accent: "purple",
     html: `
       <div class="eyebrow">Technical Demo</div>
       <h1 class="display">Fabric Ontology Grounding with a <span class="gradient-text">Redis-Governed Schema Cache</span></h1>
@@ -248,7 +246,7 @@ const slides = [
     `
   },
   {
-    stage: "The Problem", accent: "var(--red)",
+    stage: "The Problem", accent: "red",
     html: `
       <div class="section-heading">
         <div>
@@ -269,7 +267,7 @@ const slides = [
     `
   },
   {
-    stage: "Architecture", accent: "var(--blue)",
+    stage: "Architecture", accent: "blue",
     html: `
       <div class="section-heading">
         <div>
@@ -282,7 +280,7 @@ const slides = [
     `
   },
   {
-    stage: "Request Flow", accent: "var(--blue)",
+    stage: "Request Flow", accent: "blue",
     html: `
       <div class="section-heading">
         <div>
@@ -295,7 +293,7 @@ const slides = [
     `
   },
   {
-    stage: "Governance", accent: "var(--green)",
+    stage: "Governance", accent: "green",
     html: `
       <div class="section-heading">
         <div>
@@ -314,7 +312,7 @@ const slides = [
     `
   },
   {
-    stage: "Live Results", accent: "var(--red)",
+    stage: "Live Results", accent: "red",
     html: `
       <div class="section-heading">
         <div>
@@ -335,7 +333,7 @@ const slides = [
     `
   },
   {
-    stage: "Proof", accent: "var(--green)",
+    stage: "Proof", accent: "green",
     html: `
       <div class="section-heading">
         <div>
@@ -355,7 +353,7 @@ const slides = [
     `
   },
   {
-    stage: "Next Steps", accent: "var(--orange)",
+    stage: "Next Steps", accent: "orange",
     html: `
       <div class="section-heading">
         <div>
@@ -371,7 +369,7 @@ const slides = [
     `
   },
   {
-    stage: "Questions", accent: "var(--purple)",
+    stage: "Questions", accent: "purple",
     html: `
       <div class="eyebrow">Get in touch</div>
       <h1 class="display">Questions?</h1>
@@ -390,11 +388,30 @@ const stageLabel = document.getElementById('stageLabel');
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 
+const ACCENT_HEX = { purple:"a371f7", blue:"58a6ff", green:"3fb950", orange:"f08a3a", red:"fe4c25" };
+const ACCENT_DERIVED = {
+  purple: { glow:"rgba(163,113,247,0.220)", eyebrow:"rgb(185,147,249)", gradient:"rgb(183,144,249)", pillBorder:"rgba(163,113,247,0.550)", pillBg:"rgba(163,113,247,0.140)", pillText:"rgb(192,158,250)", num:"rgb(191,156,249)", chainbg:"rgb(163,113,247)" },
+  blue: { glow:"rgba(88,166,255,0.220)", eyebrow:"rgb(128,187,255)", gradient:"rgb(125,186,255)", pillBorder:"rgba(88,166,255,0.550)", pillBg:"rgba(88,166,255,0.140)", pillText:"rgb(141,194,255)", num:"rgb(138,193,255)", chainbg:"rgb(118,145,252)" },
+  green: { glow:"rgba(63,185,80,0.220)", eyebrow:"rgb(109,202,122)", gradient:"rgb(105,200,118)", pillBorder:"rgba(63,185,80,0.550)", pillBg:"rgba(63,185,80,0.140)", pillText:"rgb(124,207,136)", num:"rgb(121,206,132)", chainbg:"rgb(103,156,147)" },
+  orange: { glow:"rgba(240,138,58,0.220)", eyebrow:"rgb(244,166,105)", gradient:"rgb(243,164,101)", pillBorder:"rgba(240,138,58,0.550)", pillBg:"rgba(240,138,58,0.140)", pillText:"rgb(245,175,121)", num:"rgb(244,173,117)", chainbg:"rgb(209,128,134)" },
+  red: { glow:"rgba(254,76,37,0.220)", eyebrow:"rgb(254,119,89)", gradient:"rgb(254,115,85)", pillBorder:"rgba(254,76,37,0.550)", pillBg:"rgba(254,76,37,0.140)", pillText:"rgb(254,133,107)", num:"rgb(254,130,102)", chainbg:"rgb(218,91,121)" }
+};
+
 function build() {
   slides.forEach((s, i) => {
     const div = document.createElement('div');
     div.className = 'slide' + (i === 0 ? ' active' : '');
-    div.style.setProperty('--accent', s.accent);
+    const hex = ACCENT_HEX[s.accent];
+    const d = ACCENT_DERIVED[s.accent];
+    div.style.setProperty('--accent', '#' + hex);
+    div.style.setProperty('--accent-glow', d.glow);
+    div.style.setProperty('--accent-eyebrow', d.eyebrow);
+    div.style.setProperty('--accent-gradient', d.gradient);
+    div.style.setProperty('--accent-pill-border', d.pillBorder);
+    div.style.setProperty('--accent-pill-bg', d.pillBg);
+    div.style.setProperty('--accent-pill-text', d.pillText);
+    div.style.setProperty('--accent-num', d.num);
+    div.style.setProperty('--accent-chainbg', d.chainbg);
     div.innerHTML = s.html;
     stageEl.appendChild(div);
     const dot = document.createElement('button');
@@ -408,8 +425,6 @@ function go(i) {
   if (i < 0 || i >= slides.length || i === current) return;
   const slideEls = stageEl.querySelectorAll('.slide');
   slideEls[current].classList.remove('active');
-  slideEls[current].classList.add('was-active');
-  setTimeout(() => slideEls[current].classList.remove('was-active'), 340);
   current = i;
   slideEls[current].classList.add('active');
   document.querySelectorAll('.dot').forEach((d, idx) => d.classList.toggle('active', idx === current));
