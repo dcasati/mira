@@ -202,3 +202,128 @@ func TestConfigDirectEndpointRequiresScheme(t *testing.T) {
 		t.Fatal("expected validation error for direct endpoint missing http(s):// scheme")
 	}
 }
+
+func TestQueryChainsPreviousResponseIDAcrossSameConversation(t *testing.T) {
+	var bodies []string
+	responseID := "resp_1"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(body))
+		_, _ = w.Write([]byte(`{"id":"` + responseID + `","output_text":"ok"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.cfg.ProjectEndpoint = server.URL
+
+	ctx := WithCallContext(context.Background(), "sess_same_conversation", "query_foundry_iq_manuals")
+
+	if _, err := client.Query(ctx, "first turn"); err != nil {
+		t.Fatal(err)
+	}
+	responseID = "resp_2"
+	if _, err := client.Query(ctx, "second turn"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bodies) != 2 {
+		t.Fatalf("expected 2 requests, got %d", len(bodies))
+	}
+	var first, second struct {
+		Input              string `json:"input"`
+		PreviousResponseID string `json:"previous_response_id"`
+	}
+	if err := json.Unmarshal([]byte(bodies[0]), &first); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(bodies[1]), &second); err != nil {
+		t.Fatal(err)
+	}
+	if first.PreviousResponseID != "" {
+		t.Fatalf("first turn should not chain a previous_response_id, got %q", first.PreviousResponseID)
+	}
+	if second.PreviousResponseID != "resp_1" {
+		t.Fatalf("second turn should chain the first response's id, got %q", second.PreviousResponseID)
+	}
+}
+
+func TestQueryDoesNotChainAcrossDifferentConversations(t *testing.T) {
+	var bodies []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(body))
+		_, _ = w.Write([]byte(`{"id":"resp_a","output_text":"ok"}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(Config{ProjectEndpoint: "https://example.services.ai.azure.com/api/projects/factory", AgentName: "operator-persona-agent"}, fakeCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.cfg.ProjectEndpoint = server.URL
+
+	ctxA := WithCallContext(context.Background(), "sess_A", "query_foundry_iq_manuals")
+	ctxB := WithCallContext(context.Background(), "sess_B", "query_foundry_iq_manuals")
+
+	if _, err := client.Query(ctxA, "conversation A, turn 1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Query(ctxB, "conversation B, turn 1"); err != nil {
+		t.Fatal(err)
+	}
+
+	var second struct {
+		PreviousResponseID string `json:"previous_response_id"`
+	}
+	if err := json.Unmarshal([]byte(bodies[1]), &second); err != nil {
+		t.Fatal(err)
+	}
+	if second.PreviousResponseID != "" {
+		t.Fatalf("a different conversation should not inherit another conversation's previous_response_id, got %q", second.PreviousResponseID)
+	}
+}
+
+func TestQueryDirectEndpointNeverSendsPreviousResponseID(t *testing.T) {
+	var bodies []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		bodies = append(bodies, string(body))
+		_, _ = w.Write([]byte(`{"id":"resp_direct","output_text":"ok"}`))
+	}))
+	defer server.Close()
+
+	// failingCredential panics if GetToken is ever called -- proves the
+	// direct (in-cluster, no-auth) path never touches the credential,
+	// even with session-reuse logic now in Query().
+	client, err := NewClient(Config{DirectEndpoint: server.URL}, failingCredential{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := WithCallContext(context.Background(), "sess_direct", "query_foundry_iq_manuals")
+	if _, err := client.Query(ctx, "first turn"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Query(ctx, "second turn"); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bodies) != 2 {
+		t.Fatalf("expected 2 requests, got %d", len(bodies))
+	}
+	for i, b := range bodies {
+		var parsed struct {
+			Input              string `json:"input"`
+			PreviousResponseID string `json:"previous_response_id"`
+		}
+		if err := json.Unmarshal([]byte(b), &parsed); err != nil {
+			t.Fatal(err)
+		}
+		if parsed.PreviousResponseID != "" {
+			t.Fatalf("request %d: direct (AKS) endpoint must never send previous_response_id, got %q", i, parsed.PreviousResponseID)
+		}
+	}
+}

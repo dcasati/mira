@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -74,7 +75,39 @@ type Client struct {
 	cfg    Config
 	cred   azcore.TokenCredential
 	client *http.Client
+
+	// prevResponse tracks the last Foundry response ID per mira
+	// conversation (keyed by the mira session_id from WithCallContext),
+	// so consecutive turns in the same conversation can pass
+	// previous_response_id and reuse the same Foundry hosted-agent
+	// session/sandbox instead of paying full cold-start cost every turn.
+	// Foundry-only: never populated or consulted on the DirectEndpoint
+	// (AKS) path, since operator-agent-aks is a plain always-on process
+	// with no per-call sandbox to warm up in the first place.
+	//
+	// Live testing (2026-08-17) confirmed this is the correct mechanism:
+	// the x-agent-session-id response header looked like the obvious
+	// thing to echo back, but doing so did NOT reuse the session (a
+	// fresh agent_session_id came back, no latency improvement). Passing
+	// the prior response's "id" as previous_response_id in the request
+	// body is what actually works: same agent_session_id came back and
+	// elapsed time dropped from ~35-38s (cold) to ~11.3s (warm).
+	prevMu   sync.Mutex
+	prevByID map[string]conversationState
 }
+
+type conversationState struct {
+	responseID string
+	lastUsed   time.Time
+}
+
+// prevResponseTTL bounds how long a conversation's last response ID is
+// kept around for reuse. Foundry itself deprovisions idle session compute
+// after 15 minutes (see hosted-agents docs); there's no point trying to
+// reuse a previous_response_id past that point; the agent would just
+// resume the session at that ID anyway; this is purely to keep the local
+// map from growing unbounded over long gateway uptimes.
+const prevResponseTTL = 15 * time.Minute
 
 type QueryResult struct {
 	Answer     string `json:"answer"`
@@ -83,7 +116,8 @@ type QueryResult struct {
 }
 
 type responseCreateRequest struct {
-	Input string `json:"input"`
+	Input              string `json:"input"`
+	PreviousResponseID string `json:"previous_response_id,omitempty"`
 }
 
 type responseCreateResponse struct {
@@ -106,7 +140,7 @@ func NewClient(cfg Config, cred azcore.TokenCredential) (*Client, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	return &Client{cfg: cfg, cred: cred, client: http.DefaultClient}, nil
+	return &Client{cfg: cfg, cred: cred, client: http.DefaultClient, prevByID: make(map[string]conversationState)}, nil
 }
 
 func (c Config) Enabled() bool {
@@ -143,18 +177,33 @@ func (c Config) Validate() error {
 // internally which of its own knowledge sources (radio manuals vs. Fabric
 // operational data) to use; mira does not need to route or rewrite the
 // question itself.
+//
+// On the Foundry path, Query chains previous_response_id across turns of
+// the same mira conversation (keyed by the session_id set via
+// WithCallContext) so Foundry reuses the same hosted-agent session/sandbox
+// instead of cold-starting a new one on every turn. The DirectEndpoint
+// (AKS) path never sets or reads previous_response_id -- operator-agent-aks
+// has no per-call sandbox to warm up, and its request body is left exactly
+// as before.
 func (c *Client) Query(ctx context.Context, question string) (QueryResult, error) {
 	question = strings.TrimSpace(question)
 	if question == "" {
 		return QueryResult{}, errors.New("question is required")
 	}
 
-	body, err := json.Marshal(responseCreateRequest{Input: question})
+	direct := c.cfg.DirectEndpoint != ""
+
+	convID := contextString(ctx, sessionIDContextKey)
+	var previousResponseID string
+	if !direct && convID != "" {
+		previousResponseID = c.lookupPreviousResponseID(convID)
+	}
+
+	body, err := json.Marshal(responseCreateRequest{Input: question, PreviousResponseID: previousResponseID})
 	if err != nil {
 		return QueryResult{}, err
 	}
 
-	direct := c.cfg.DirectEndpoint != ""
 	var endpoint, agentLabel string
 	if direct {
 		endpoint = c.cfg.DirectEndpoint + "/responses"
@@ -186,6 +235,7 @@ func (c *Client) Query(ctx context.Context, question string) (QueryResult, error
 		"agent_name", agentLabel,
 		"http_endpoint", endpoint,
 		"direct", direct,
+		"previous_response_id", previousResponseID,
 	)
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -226,8 +276,41 @@ func (c *Client) Query(ctx context.Context, question string) (QueryResult, error
 		"foundry_request_id", resp.Header.Get("x-request-id"),
 		"http_status", resp.StatusCode,
 		"elapsed_ms", time.Since(start).Milliseconds(),
+		"warm_start", previousResponseID != "",
 	)
+	if !direct && convID != "" && parsed.ID != "" {
+		c.storePreviousResponseID(convID, parsed.ID)
+	}
 	return QueryResult{Answer: answer, ResponseID: parsed.ID, AgentName: agentLabel}, nil
+}
+
+// lookupPreviousResponseID returns the last Foundry response ID recorded
+// for this mira conversation, if any, and prunes entries past
+// prevResponseTTL while it holds the lock. Foundry-only: callers must not
+// invoke this on the DirectEndpoint (AKS) path.
+func (c *Client) lookupPreviousResponseID(convID string) string {
+	c.prevMu.Lock()
+	defer c.prevMu.Unlock()
+	now := time.Now()
+	for id, state := range c.prevByID {
+		if now.Sub(state.lastUsed) > prevResponseTTL {
+			delete(c.prevByID, id)
+		}
+	}
+	state, ok := c.prevByID[convID]
+	if !ok {
+		return ""
+	}
+	return state.responseID
+}
+
+// storePreviousResponseID records the Foundry response ID to chain from on
+// the next turn of this mira conversation. Foundry-only: callers must not
+// invoke this on the DirectEndpoint (AKS) path.
+func (c *Client) storePreviousResponseID(convID, responseID string) {
+	c.prevMu.Lock()
+	defer c.prevMu.Unlock()
+	c.prevByID[convID] = conversationState{responseID: responseID, lastUsed: time.Now()}
 }
 
 func extractOutputText(resp responseCreateResponse) string {
