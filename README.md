@@ -39,6 +39,14 @@ Each subfolder is self-contained with its own dependencies, Dockerfile, and
   workspace's Git integration and how the GitHub Actions publish pipeline
   works.
 
+## Infrastructure
+
+[`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md) is a full as-built
+snapshot of every Azure resource, identity, RBAC role, and Kubernetes
+object behind a live deployment of this system — captured directly from
+Azure/`kubectl`, with `az` commands to recreate each piece in a fresh
+subscription. Start there if you're standing this up from scratch.
+
 ## History note
 
 This repo was formed by merging three prior repositories
