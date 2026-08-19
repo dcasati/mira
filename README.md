@@ -47,6 +47,13 @@ object behind a live deployment of this system — captured directly from
 Azure/`kubectl`, with `az` commands to recreate each piece in a fresh
 subscription. Start there if you're standing this up from scratch.
 
+[`docs/REBUILD_PLAYBOOK.md`](docs/REBUILD_PLAYBOOK.md) is written
+specifically for an AI coding agent (Copilot, Microsoft Scout, etc.) to
+follow step-by-step when asked to rebuild this infrastructure — it says
+what to ask the user for first, the exact order to create things in, and
+where to pause for the handful of steps that are portal-only (Fabric
+workspace access, Zello account setup) and can't be automated.
+
 ## History note
 
 This repo was formed by merging three prior repositories

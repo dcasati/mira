@@ -8,7 +8,12 @@ capture time — this is not a design doc, it's what was actually deployed.
 
 If you're rebuilding this in a new subscription, follow the numbered
 sections in order — each one only depends on resources created in earlier
-sections.
+sections. **If an AI agent (Copilot, Microsoft Scout, etc.) is doing the
+rebuild, point it at [`REBUILD_PLAYBOOK.md`](REBUILD_PLAYBOOK.md) instead**
+— that file is written as step-by-step imperative instructions for an
+agent to execute, including what to ask the user for first and where to
+pause for portal-only steps; this document is its reference source for
+exact resource names and values.
 
 ---
 
