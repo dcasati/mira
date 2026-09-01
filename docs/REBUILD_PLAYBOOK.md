@@ -188,7 +188,10 @@ CLI equivalent. Confirm with the user this is done before continuing.
 
 ## Step 7 — Kubernetes resources
 
-Build and push images first:
+Build and push images first (this uses `az acr build`, so it always builds
+the full production image — see `services/mira-gateway/README.md`'s "Build
+and test locally" section instead if you need a native `bin/mira` binary
+for local dev/testing outside a container):
 ```bash
 az acr build --registry <ACR_NAME> --image mira:latest \
   -f services/mira-gateway/Dockerfile services/mira-gateway

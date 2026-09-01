@@ -31,7 +31,10 @@ own Fabric workspace, their own curated enrichment) while reusing the same
 Each subfolder is self-contained with its own dependencies, Dockerfile, and
 (where applicable) Kubernetes manifests:
 
-- `services/mira-gateway/` — see its own README for build/run instructions.
+- `services/mira-gateway/` — see its own README for build/run instructions,
+  including how to produce the local `bin/mira` binary (both the plain
+  Go-only build used for unit tests, and the full native build with
+  Opus/Whisper support for actually running it).
 - `services/operator-agent/` — see `docs/architecture.md` for how grounding
   works, and `docs/slides/` for a technical demo deck and a partner
   go-to-market deck.

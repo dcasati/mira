@@ -24,7 +24,7 @@ MIRA is a headless Go voice bot for a private Zello Friends & Family channel. It
 
 ## Prerequisites
 
-- Go 1.24+
+- Go 1.25+ (matches `go.mod`)
 - Docker
 - Azure CLI
 - kubectl
@@ -34,6 +34,7 @@ MIRA is a headless Go voice bot for a private Zello Friends & Family channel. It
 - optional Fabric Eventstream routing MQTT telemetry into a KQL database/Eventhouse table
 - a dedicated Zello Friends & Family account for MIRA
 - a whisper.cpp model, for example `ggml-tiny.en.bin`; the supplied Dockerfile bakes `tiny.en` into `/models/ggml-tiny.en.bin`
+- only if building the full native binary locally (not required for `make build`/`make test`, see below): libopus and whisper.cpp headers/libraries on your PATH
 
 ## Zello setup
 
@@ -203,25 +204,93 @@ Secrets must stay outside the image and outside git. Use `k8s/secret.example.yam
 
 ## Build and test locally
 
+There are two different local build outputs — know which one you're
+producing:
+
+1. **Plain build (`make build` / `go build ./cmd/mira`, no CGO tags)** —
+   this is what's checked out by default and is what running `make build`
+   produces at `bin/mira`. It compiles cleanly with only the Go toolchain
+   (no C dependencies), but **has no audio codec or wake-word support at
+   all** — it's meant for compiling and running the Go unit test suite
+   (`internal/...`), not for actually talking to Zello or detecting a wake
+   word.
+2. **Full native build (`-tags "opus whisper"`)** — this is the real
+   production binary, requires libopus and a locally built whisper.cpp on
+   your machine, and is what the Dockerfile below produces for the
+   container image.
+
 Unit tests do not require real Zello, Azure, libopus, or Whisper credentials:
 
 ```bash
 make tidy
 make test
-make build
+make build          # -> bin/mira (plain build, no opus/whisper tags)
 ```
 
-Production native build requires libopus and whisper.cpp headers/libraries:
+### Building the full native binary locally (macOS or Linux)
+
+Install libopus and build whisper.cpp from the same pinned commit the
+Dockerfile uses (`592feef04a18`), so your local build matches the
+container image exactly:
+
+**macOS:**
+```bash
+brew install opus cmake pkg-config
+
+git clone https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp
+cd /tmp/whisper.cpp && git checkout 592feef04a18
+cmake -S . -B build -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_EXAMPLES=OFF
+cmake --build build --target whisper -j"$(sysctl -n hw.ncpu)"
+
+sudo mkdir -p /usr/local/lib /usr/local/include
+sudo cp -a build/bin/lib*.dylib /usr/local/lib/
+sudo cp include/whisper.h /usr/local/include/
+find ggml -name '*.h' -exec sudo cp {} /usr/local/include/ \;
+
+bash models/download-ggml-model.sh tiny.en
+mkdir -p ~/mira-models && cp models/ggml-tiny.en.bin ~/mira-models/
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt-get install -y build-essential cmake git libopus-dev libopusfile-dev pkg-config
+
+git clone https://github.com/ggerganov/whisper.cpp /tmp/whisper.cpp
+cd /tmp/whisper.cpp && git checkout 592feef04a18
+cmake -S . -B build -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_EXAMPLES=OFF
+cmake --build build --target whisper -j"$(nproc)"
+
+sudo mkdir -p /usr/local/lib /usr/local/include
+sudo cp -a build/bin/lib*.so* /usr/local/lib/
+sudo cp include/whisper.h /usr/local/include/
+find ggml -name '*.h' -exec sudo cp {} /usr/local/include/ \;
+sudo ldconfig
+
+bash models/download-ggml-model.sh tiny.en
+mkdir -p ~/mira-models && cp models/ggml-tiny.en.bin ~/mira-models/
+```
+
+Then, from `services/mira-gateway/`:
 
 ```bash
-go build -tags "opus whisper" ./cmd/mira
+CGO_ENABLED=1 CGO_CFLAGS="-I/usr/local/include" CGO_LDFLAGS="-L/usr/local/lib" \
+  go build -tags "opus whisper" -o bin/mira ./cmd/mira
+```
+
+On macOS you may also need `install_name_tool`/`DYLD_LIBRARY_PATH=/usr/local/lib`
+set when *running* the binary (not just building it), since macOS doesn't
+search `/usr/local/lib` for dylibs the way Linux's `ldconfig` does:
+
+```bash
+DYLD_LIBRARY_PATH=/usr/local/lib ./bin/mira
 ```
 
 Wake detector development mode accepts a mono PCM16 WAV file and does not require Zello or Azure:
 
 ```bash
 MIRA_AUDIO_FILE=input.wav \
-MIRA_WHISPER_MODEL_PATH=/models/ggml-tiny.en.bin \
+MIRA_WHISPER_MODEL_PATH=~/mira-models/ggml-tiny.en.bin \
+DYLD_LIBRARY_PATH=/usr/local/lib \
 go run -tags whisper ./cmd/mira
 ```
 
