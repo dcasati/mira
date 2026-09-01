@@ -271,7 +271,10 @@ in its own secret (`FOUNDRY_IQ_SEARCH_API_KEY`), not RBAC.
 Mira connects to Zello's **Channel API** (`wss://zello.io/ws`) using a
 named-account logon: `ZELLO_USERNAME` / `ZELLO_PASSWORD` /
 `ZELLO_CHANNEL` / `ZELLO_AUTH_TOKEN`. Rebuilding this requires:
-1. A Zello Work account with Channel API access and the target channel (`Zavatrix` at capture time).
+1. A Zello Work account with Channel API access and the target channel
+   (`Caldova` as of 2026-09-01 — previously `Zavatrix`, retired; do not
+   confuse this with `kb-zavatrix`, the unrelated Azure AI Search knowledge
+   base name in §11, which was never a channel name and hasn't changed).
 2. A JWT auth token signed with the account's Zello developer-portal Issuer/Private Key (RS256, `iss`+`exp` payload) for production; the 30-day sample dev token for local testing only.
 3. None of this is stored in Azure Key Vault currently — it's a plain Kubernetes Secret (`mira-zello`). See `services/mira-gateway/README.md` for the exact logon frame shape.
 
