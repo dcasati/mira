@@ -243,11 +243,24 @@ def main():
         credential=credential,
     )
 
+    default_options: dict = {"store": False}
+    if model_name.startswith("gpt-5"):
+        # reasoning effort minimal: this agent only does simple tool-routing
+        # decisions and short answer synthesis, not multi-step reasoning.
+        # Live-measured 2026-09-02: gpt-5-mini's default reasoning effort
+        # cost 9.1s (pick tool) + 7.0s (synthesize answer) = 16.1s of a
+        # 19.7s total round trip for a single get_shift_schedule call -- the
+        # tool call itself only took 3.6s. Only GPT-5-family models accept
+        # this "reasoning" parameter at all -- passing it to a non-reasoning
+        # model (e.g. gpt-4.1-mini) raises a TypeError from the Responses
+        # API, so it's gated on the model name here.
+        default_options["reasoning"] = {"effort": "minimal"}
+
     agent = Agent(
         client=client,
         instructions=ROUTER_INSTRUCTIONS,
         tools=_build_router_tools(project_endpoint, credential),
-        default_options={"store": False},
+        default_options=default_options,
     )
 
     server = ResponsesHostServer(agent, store=InMemoryResponseProvider())
