@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: operator-router
-          image: acrmiracaldova.azurecr.io/operator-router-aks@sha256:0b1e742b31db48e09bca5a98ae205916329dcebc988508b30da456e477143f8b
+          image: acrmiracaldova.azurecr.io/operator-router-aks@sha256:f913a9d7b6c00e75a579be3a953c29e12a63b202b3cc44f6833e1176b8017801
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -35,12 +35,22 @@ spec:
             # operator-persona-agent-aks/k8s/deployment.yaml.
             - name: AGENTSERVER_STATE_ROOT
               value: /agentserver-state
+            # See workiq_client.py: silent-only MSAL token refresh against
+            # this mounted cache (operator-router-workiq-cache Secret).
+            # No client secret needed -- this is a public-client app, the
+            # cache carries the refresh token from the one-time device-code
+            # sign-in. See docs/WORKIQ_SETUP.md.
+            - name: WORKIQ_CACHE_PATH
+              value: /workiq/cache.bin
           envFrom:
             - configMapRef:
                 name: operator-router-config
           volumeMounts:
             - name: agentserver-state
               mountPath: /agentserver-state
+            - name: workiq-cache
+              mountPath: /workiq
+              readOnly: true
           resources:
             requests:
               cpu: "250m"
@@ -56,6 +66,9 @@ spec:
       volumes:
         - name: agentserver-state
           emptyDir: {}
+        - name: workiq-cache
+          secret:
+            secretName: operator-router-workiq-cache
 ---
 apiVersion: v1
 kind: Service

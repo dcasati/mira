@@ -7,5 +7,12 @@ agent-framework-foundry-hosting>=1.0.0a260630
 # own, unlike operator-persona-agent-aks.
 httpx
 
+# Silent-only token refresh for the Work IQ tool (see workiq_client.py).
+# Work IQ has no application-only auth mode; this uses a genuinely
+# delegated token for one fixed, pre-authorized identity, refreshed
+# silently from a cached refresh token -- never falls back to interactive
+# sign-in from inside this pod. See docs/WORKIQ_SETUP.md.
+msal
+
 # debugpy enables local debugging of this agent with the Foundry Toolkit VS Code extension.
 debugpy

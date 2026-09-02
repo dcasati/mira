@@ -50,6 +50,8 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
+from workiq_client import WorkIQUnavailable, ask_workiq
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -59,9 +61,9 @@ DOWNSTREAM_AGENT_SCOPE = "https://ai.azure.com/.default"
 
 ROUTER_INSTRUCTIONS = """You are Operator's routing layer for the Waypoint invoice-assurance agents.
 
-You are talked to over voice (via a push-to-talk radio gateway), so the human asking never says an agent's internal name -- they ask a plain question. Your only job is to pick the one downstream tool below that actually owns the question's domain, call it, and relay its answer back briefly and clearly. Do not attempt to answer domain questions yourself -- you have no knowledge of invoices, evidence, or workflow status except what the tools return.
+You are talked to over voice (via a push-to-talk radio gateway), so the human asking never says an agent's internal name -- they ask a plain question. Your only job is to pick the one downstream tool below that actually owns the question's domain, call it, and relay its answer back briefly and clearly. Do not attempt to answer domain questions yourself -- you have no knowledge of invoices, evidence, workflow status, or workplace data except what the tools return.
 
-You have two tools:
+You have three tools:
 
 1. ask_assurance_orchestrator
 Use for questions about invoice-assurance workflow status, findings, evidence already gathered, contracts, policies, available actions, or run/case status. Also use this if the caller explicitly asks to trigger or run the assurance pipeline for a specific invoice ID, document, or case.
@@ -69,13 +71,21 @@ Use for questions about invoice-assurance workflow status, findings, evidence al
 2. ask_collaboration_evidence_expert
 Use for questions asking to find or gather NEW evidence from email, Teams, or SharePoint about a supplier invoice -- approvals, disputes, escalations, delivery or quality exceptions, or procurement/finance decisions that haven't already been surfaced.
 
+3. ask_workiq
+Use for general workplace questions that are not specific to invoice assurance -- who manages/reports to whom, meetings and calendar, general email or Teams lookups, org-chart or people questions, or anything else about Microsoft 365 workplace context. IMPORTANT: this tool answers using ONE FIXED, PRE-AUTHORIZED PERSON'S OWN mailbox/Teams/calendar/files -- not the caller's own data, and not anyone else's. Only use it for questions that fixed identity's own data could plausibly answer (e.g. org/people lookups, or that person's own meetings/email) -- do not use it as a substitute for ask_assurance_orchestrator or ask_collaboration_evidence_expert.
+
 Routing rules:
-- If a question could fit either tool, prefer ask_assurance_orchestrator first (it already has visibility into evidence collected by the other agent) unless the caller is explicitly asking you to go find something new in email/Teams/SharePoint.
-- Call exactly one tool per question unless the caller's question genuinely spans both (e.g. "what's the status, and can you also check Teams for anything new") -- in that case call both and combine the answers.
-- Never say the internal tool/agent names out loud. Speak plainly, e.g. "Checking the assurance workflow" or "Looking through the evidence", not "calling assurance-orchestrator".
+- If a question could fit either ask_assurance_orchestrator or ask_collaboration_evidence_expert, prefer ask_assurance_orchestrator first (it already has visibility into evidence collected by the other agent) unless the caller is explicitly asking you to go find something new in email/Teams/SharePoint.
+- Use ask_workiq only for general workplace/people/calendar questions clearly outside invoice assurance.
+- Call exactly one tool per question unless the caller's question genuinely spans multiple domains -- in that case call each relevant tool and combine the answers.
+- Never say the internal tool/agent names out loud. Speak plainly, e.g. "Checking the assurance workflow", "Looking through the evidence", or "Checking that", not "calling assurance-orchestrator".
 - Keep replies brief -- one or two sentences -- since this is a voice channel. Offer to send full detail in chat if the underlying answer is long.
 - If a tool call fails or returns an error, say so plainly (e.g. "That lookup didn't come back cleanly, try again") rather than inventing an answer.
 """
+
+WORKIQ_APP_ID = "92fea0ec-dffb-41f2-9d05-f0980142edbd"  # operator-router-workiq-client
+WORKIQ_TENANT_ID = "95287129-9bbb-4084-8485-dc845ae7d143"  # Caldova
+WORKIQ_CACHE_PATH = os.getenv("WORKIQ_CACHE_PATH", "/workiq/cache.bin")
 
 
 def _workload_identity_credential() -> TokenCredential:
@@ -164,7 +174,26 @@ def _build_router_tools(project_endpoint: str, credential: TokenCredential):
     ) -> str:
         return _call_downstream_agent(project_endpoint, "collaboration-evidence-expert", credential, question)
 
-    return [ask_assurance_orchestrator, ask_collaboration_evidence_expert]
+    @tool(
+        name="ask_workiq",
+        description=(
+            "Ask general Microsoft 365 workplace questions -- org/people lookups (who "
+            "manages whom, who reports to whom), meetings and calendar, or general "
+            "email/Teams context. Answers using one fixed, pre-authorized identity's own "
+            "mailbox/Teams/calendar/files, not the caller's own data."
+        ),
+        approval_mode="never_require",
+    )
+    def ask_workiq_tool(
+        question: Annotated[str, "The caller's question, passed through as-is."],
+    ) -> str:
+        try:
+            return ask_workiq(question, WORKIQ_APP_ID, WORKIQ_TENANT_ID, WORKIQ_CACHE_PATH)
+        except WorkIQUnavailable as exc:
+            logger.warning("operator_router.workiq_unavailable error=%s", exc)
+            return f"Work IQ is not available right now: {exc}"
+
+    return [ask_assurance_orchestrator, ask_collaboration_evidence_expert, ask_workiq_tool]
 
 
 def main():
