@@ -1,0 +1,11 @@
+agent-framework-foundry
+agent-framework-foundry-hosting>=1.0.0a260630
+
+# Used only to call the two downstream Waypoint agents' own Responses API
+# endpoints directly (see main.py's _call_downstream_agent). No Fabric/
+# OneLake/Redis dependencies here -- this router has no domain data of its
+# own, unlike operator-persona-agent-aks.
+httpx
+
+# debugpy enables local debugging of this agent with the Foundry Toolkit VS Code extension.
+debugpy

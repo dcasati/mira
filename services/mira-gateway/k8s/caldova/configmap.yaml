@@ -18,13 +18,20 @@ data:
   AZURE_OPENAI_REALTIME_DEPLOYMENT: "mira-gpt-realtime-mini"
   AZURE_OPENAI_REALTIME_VOICE: "echo"
   MIRA_LOOKUP_FILLER: "Standby."
-  # Points at operator-router, a new Foundry hosted agent (see
-  # services/operator-agent/src/operator-router/) that classifies the
-  # question and calls whichever of the Waypoint specialist agents
-  # (assurance-orchestrator, collaboration-evidence-expert) actually owns
-  # it -- mira-gateway itself only ever talks to this one agent name.
-  FOUNDRY_PROJECT_ENDPOINT: "https://ai-waypoint-agents-rxhrdaxs-b859df90.services.ai.azure.com/api/projects/ai-project-waypoint-agents-rxhrdaxs"
-  FOUNDRY_IQ_AGENT_NAME: "operator-router"
+  # 2026-09-02: moved operator-router's own hosting from Foundry to AKS
+  # (services/operator-agent/src/operator-router-aks/) -- live testing
+  # measured 74-82s for EVERY call to the Foundry-hosted operator-router,
+  # even warm-session calls with previous_response_id chained. Foundry
+  # hosted-agent sandboxes have no pre-warm/min-instance option, so that
+  # cost was unavoidable on every single voice question. This direct
+  # in-cluster endpoint removes THAT hop's cold start entirely (mira calls
+  # the pod directly, no per-call sandbox to provision) -- the two
+  # downstream Waypoint agents this router calls (assurance-orchestrator,
+  # collaboration-evidence-expert) remain Foundry-hosted and still
+  # cold-start on their end; that's a separate, currently unaddressed cost
+  # outside this change's scope (they're the Waypoint team's own agents,
+  # not owned by this repo).
+  FOUNDRY_IQ_DIRECT_ENDPOINT: "http://operator-router-aks.operator-router-aks.svc.cluster.local:8088"
   FOUNDRY_IQ_MAX_OUTPUT_CHARS: "6000"
   HTTP_LISTEN_ADDR: ":8080"
   LOG_LEVEL: "DEBUG"

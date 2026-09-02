@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-router-config
+  namespace: operator-router-aks
+data:
+  FOUNDRY_PROJECT_ENDPOINT: "https://ai-waypoint-agents-rxhrdaxs-b859df90.services.ai.azure.com/api/projects/ai-project-waypoint-agents-rxhrdaxs"
+  AZURE_AI_MODEL_DEPLOYMENT_NAME: "gpt-5-mini"
+  PORT: "8088"
