@@ -39,7 +39,7 @@
 
 import logging
 import os
-from typing import Annotated
+from typing import Annotated, Optional
 
 import httpx
 from agent_framework import Agent, tool
@@ -50,6 +50,7 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
+from shifts_client import ShiftsUnavailable, get_shift_schedule
 from workiq_client import WorkIQUnavailable, ask_workiq
 
 load_dotenv()
@@ -63,7 +64,7 @@ ROUTER_INSTRUCTIONS = """You are Operator's routing layer for the Waypoint invoi
 
 You are talked to over voice (via a push-to-talk radio gateway), so the human asking never says an agent's internal name -- they ask a plain question. Your only job is to pick the one downstream tool below that actually owns the question's domain, call it, and relay its answer back briefly and clearly. Do not attempt to answer domain questions yourself -- you have no knowledge of invoices, evidence, workflow status, or workplace data except what the tools return.
 
-You have three tools:
+You have four tools:
 
 1. ask_assurance_orchestrator
 Use for questions about invoice-assurance workflow status, findings, evidence already gathered, contracts, policies, available actions, or run/case status. Also use this if the caller explicitly asks to trigger or run the assurance pipeline for a specific invoice ID, document, or case.
@@ -74,9 +75,13 @@ Use for questions asking to find or gather NEW evidence from email, Teams, or Sh
 3. ask_workiq
 Use for general workplace questions that are not specific to invoice assurance -- who manages/reports to whom, meetings and calendar, general email or Teams lookups, org-chart or people questions, or anything else about Microsoft 365 workplace context. IMPORTANT: this tool answers using ONE FIXED, PRE-AUTHORIZED PERSON'S OWN mailbox/Teams/calendar/files -- not the caller's own data, and not anyone else's. Only use it for questions that fixed identity's own data could plausibly answer (e.g. org/people lookups, or that person's own meetings/email) -- do not use it as a substitute for ask_assurance_orchestrator or ask_collaboration_evidence_expert.
 
+4. get_shift_schedule
+Use ONLY for questions about who is working/on shift/on the schedule for the Manufacturing and Supply team, for a given day. Pass the date as YYYY-MM-DD if the caller names a specific day, otherwise omit it (defaults to today). Do not use ask_workiq for shift-schedule questions -- Work IQ cannot see Teams Shifts data.
+
 Routing rules:
 - If a question could fit either ask_assurance_orchestrator or ask_collaboration_evidence_expert, prefer ask_assurance_orchestrator first (it already has visibility into evidence collected by the other agent) unless the caller is explicitly asking you to go find something new in email/Teams/SharePoint.
-- Use ask_workiq only for general workplace/people/calendar questions clearly outside invoice assurance.
+- Use ask_workiq only for general workplace/people/calendar questions clearly outside invoice assurance and outside shift scheduling.
+- Use get_shift_schedule specifically and only for "who is on shift/working today/tomorrow/on [day]" questions.
 - Call exactly one tool per question unless the caller's question genuinely spans multiple domains -- in that case call each relevant tool and combine the answers.
 - Never say the internal tool/agent names out loud. Speak plainly, e.g. "Checking the assurance workflow", "Looking through the evidence", or "Checking that", not "calling assurance-orchestrator".
 - Keep replies brief -- one or two sentences -- since this is a voice channel. Offer to send full detail in chat if the underlying answer is long.
@@ -193,7 +198,32 @@ def _build_router_tools(project_endpoint: str, credential: TokenCredential):
             logger.warning("operator_router.workiq_unavailable error=%s", exc)
             return f"Work IQ is not available right now: {exc}"
 
-    return [ask_assurance_orchestrator, ask_collaboration_evidence_expert, ask_workiq_tool]
+    @tool(
+        name="get_shift_schedule",
+        description=(
+            "Look up who is on shift/working today (or a specific date) on the "
+            "Manufacturing and Supply team's Teams Shifts schedule."
+        ),
+        approval_mode="never_require",
+    )
+    def get_shift_schedule_tool(
+        date: Annotated[
+            Optional[str],
+            "Date to check as YYYY-MM-DD, or omit/leave blank for today.",
+        ] = None,
+    ) -> str:
+        try:
+            return get_shift_schedule(date, WORKIQ_APP_ID, WORKIQ_TENANT_ID, WORKIQ_CACHE_PATH)
+        except ShiftsUnavailable as exc:
+            logger.warning("operator_router.shifts_unavailable error=%s", exc)
+            return f"The shift schedule isn't available right now: {exc}"
+
+    return [
+        ask_assurance_orchestrator,
+        ask_collaboration_evidence_expert,
+        ask_workiq_tool,
+        get_shift_schedule_tool,
+    ]
 
 
 def main():
