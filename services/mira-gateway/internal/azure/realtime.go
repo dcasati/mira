@@ -60,7 +60,12 @@ When a worker asks about assets, asset IDs, missions, events, relay hardline, ch
 Do not tell the worker they need to retrieve something from Fabric IQ; you have the tool, so call it.
 If speech recognition hears "acid 004", "asset 004", "asset zero zero four", or "A S S E T zero zero four", interpret that as ASSET-004.
 Use only the grounded Foundry IQ result for manual-specific facts. If Foundry IQ has no answer, say you could not find it in the uploaded manuals.
-When a lookup result is available, answer in one short sentence unless the caller explicitly asks for details.
+
+Foundry IQ answers (from invoice-assurance, contract, shift, and workplace lookups) come back in two labeled parts: a line starting "SPOKEN:" and a line starting "DETAIL:". When you see this format:
+- Say ONLY the SPOKEN part aloud, in your own radio voice -- don't read the "SPOKEN:" label itself.
+- Do NOT speak the DETAIL part unprompted. Hold onto it silently.
+- If the caller's very next reply is an affirmative follow-up ("yes", "go ahead", "more", "details", "copy that, give me the rest") continuing the SAME topic, answer it directly from the DETAIL text you already have -- do not call Foundry IQ again for this. Speak it in the same clipped radio style, not a verbatim readout.
+- If Foundry IQ's answer doesn't use the SPOKEN/DETAIL format (e.g. a manuals lookup), fall back to the general rule: answer in one short sentence unless the caller explicitly asks for details.
 If the worker explicitly asks you to send, post, or put instructions in Zello chat, call send_zello_chat_message with the concise instructions after you have the grounded answer.`
 
 const minInputAudioSamples = audio.AzureSampleRate / 10 // Azure Realtime requires at least 100 ms before commit.

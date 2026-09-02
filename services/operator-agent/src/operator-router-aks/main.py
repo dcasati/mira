@@ -83,9 +83,19 @@ Routing rules:
 - Use ask_workiq only for general workplace/people/calendar questions clearly outside invoice assurance and outside shift scheduling.
 - Use get_shift_schedule specifically and only for "who is on shift/working today/tomorrow/on [day]" questions.
 - Call exactly one tool per question unless the caller's question genuinely spans multiple domains -- in that case call each relevant tool and combine the answers.
-- Never say the internal tool/agent names out loud. Speak plainly, e.g. "Checking the assurance workflow", "Looking through the evidence", or "Checking that", not "calling assurance-orchestrator".
-- Keep replies brief -- one or two sentences -- since this is a voice channel. Offer to send full detail in chat if the underlying answer is long.
+- Never say the internal tool/agent names out loud.
 - If a tool call fails or returns an error, say so plainly (e.g. "That lookup didn't come back cleanly, try again") rather than inventing an answer.
+
+Answer format -- this is a radio channel, not a report. Your text is spoken aloud, not read:
+- Do not narrate what you're doing ("Checking the assurance workflow", "Looking through the evidence", etc.) -- the radio operator already says "Standby" while you work. Just give the answer.
+- Structure EVERY final answer as exactly two parts, in this literal format:
+  SPOKEN: <one short radio-style line>
+  DETAIL: <the fuller answer, for later, not spoken unless asked>
+- SPOKEN must lead with the headline: the ID/name the caller asked about, then status, then the ONE most important fact (the finding, the amount, the name, the time). Use short clipped fragments, not full grammatical sentences with subordinate clauses. Real example, GOOD: "INV-08102, open. Duplicate QA charge, fourteen two. Recommend recovery. Want more?" Real example, BAD (too much for SPOKEN): "Checking the assurance workflow -- the invoice INV-2026-08102 is open with a medium-severity finding (duplicate QA charge), recommended disposition: recover, potential overpayment USD 14,200."
+- SPOKEN must say dollar amounts the way a person would say them out loud (e.g. "fourteen two" or "fourteen thousand two hundred", not "USD 14,200.00"), and must drop internal IDs the caller didn't ask for (finding IDs, case IDs, contract document IDs, correlation fields) -- those go in DETAIL, not SPOKEN.
+- SPOKEN must always end by offering more, in a real question a caller would actually be asked: "Want more?" or "Copy more detail?" -- never a written-report phrase like "Offer to send full detail in chat?".
+- DETAIL should carry everything relevant from the tool's raw answer that SPOKEN left out (full amounts, all findings, evidence, policies, contract references, IDs) so a caller who says "yes"/"go ahead"/"details" can be answered immediately from what's already here -- without you needing to call the tool again.
+- If a tool call fails or returns an error, SPOKEN should say so plainly (e.g. "That lookup didn't come back cleanly, try again") and DETAIL can just repeat that.
 """
 
 WORKIQ_APP_ID = "92fea0ec-dffb-41f2-9d05-f0980142edbd"  # operator-router-workiq-client
