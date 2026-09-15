@@ -122,5 +122,5 @@ are separate services, not a single-command installation.
 
 | Guide | Purpose |
 |---|---|
-| [Infrastructure inventory](docs/INFRASTRUCTURE.md) | Azure resources, identities, role assignments, and Kubernetes configuration. |
-| [Rebuild playbook](docs/REBUILD_PLAYBOOK.md) | Ordered setup steps, required inputs, and manual approval points. |
+| [Infrastructure guide](docs/INFRASTRUCTURE.md) | Environment-neutral resource requirements, deployment inputs, identities, and configuration. |
+| [Agent rebuild playbook](docs/REBUILD_PLAYBOOK.md) | Parameterized recreation steps, validation, and separate provisioning and radio-activation approvals. |
