@@ -3,6 +3,11 @@
 **AI copilot for frontline radio operations.** Mira accepts operational
 questions over push-to-talk radio and returns concise, grounded spoken answers.
 
+[![Animated MIRA architecture overview showing voice, evidence, and content flows.](docs/diagrams/remotion-posters/MiraOverviewFlow.gif)](https://dcasati.github.io/mira/media/MiraOverviewFlow.mp4)
+
+**[Watch the full-resolution overview](https://dcasati.github.io/mira/media/MiraOverviewFlow.mp4)** ·
+[All walkthroughs](https://dcasati.github.io/mira/)
+
 Start with **“Operator, …”** or **“Dispatcher, …”**. Mira handles the voice
 conversation, routes the question to an appropriate source, and returns a concise
 spoken answer. Reviewed procedures and live operational evidence keep separate
@@ -12,10 +17,6 @@ source and authorization boundaries.
 [Repository layout](#repository-layout) · [Getting started](#getting-started)
 
 ## Architecture
-
-**[Play the Remotion architecture walkthrough](https://dcasati.github.io/mira/)**
-
-[![Animated preview of the native Remotion architecture explainer. Select to play the full walkthrough.](docs/diagrams/remotion-posters/MiraReferenceArchitecture-preview.gif)](https://dcasati.github.io/mira/)
 
 [Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
 [Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
@@ -47,8 +48,8 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 These videos are rendered directly from the original Remotion compositions at
 60 fps. [Open the player](https://dcasati.github.io/mira/) for playback, seeking,
-and fullscreen controls. The GIF above previews the opening eight seconds;
-select it to play the full walkthrough.
+and fullscreen controls. The GIF above contains the complete 52-second
+architecture overview; select it to open the full-resolution video.
 
 | Walkthrough | Duration | Content |
 |---|---:|---|
