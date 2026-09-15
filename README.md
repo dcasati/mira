@@ -13,9 +13,9 @@ source and authorization boundaries.
 
 ## Architecture
 
-**[Play architecture animations](https://dcasati.github.io/mira/)**
+**[Play the Remotion architecture walkthrough](https://dcasati.github.io/mira/)**
 
-[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)](https://dcasati.github.io/mira/)
+[![Preview of the native Remotion architecture explainer. Select to play the full walkthrough.](docs/diagrams/remotion-posters/MiraReferenceArchitecture.png)](https://dcasati.github.io/mira/)
 
 [Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
 [Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
@@ -45,95 +45,20 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 ## Animated walkthroughs
 
-For standalone playback with Play/Pause controls,
-[open the animation viewer](https://dcasati.github.io/mira/).
-Inline previews below use animated PNG (APNG). For a nonanimated view, use the
-static diagram links above.
+These videos are rendered directly from the original Remotion compositions at
+60 fps. [Open the player](https://dcasati.github.io/mira/) for playback, seeking,
+and fullscreen controls. The images in this README are previews, not players.
 
-<details>
-<summary><strong>1. End-to-end overview</strong>: from radio question to grounded answer</summary>
-
-Follow the voice, source-routing and governed-content paths across the system.
-
-![Animated overview of Mira's voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)
-
-[Download the overview video (MP4)](docs/diagrams/mira-architecture-overview-animated.mp4)
-
-</details>
-
-<details>
-<summary><strong>2. Reference architecture</strong>: the components and their boundaries</summary>
-
-See how the voice gateway, router, model backends, specialist tools and content
-release plane fit together.
-
-![Animated tour of Mira's reference architecture and service boundaries.](docs/diagrams/github-apng/MiraReferenceArchitecture.png)
-
-</details>
-
-<details>
-<summary><strong>3. Voice flow</strong>: Zello and Azure OpenAI Realtime</summary>
-
-Trace the voice path through the gateway to the separate Realtime model backend
-and back to the worker.
-
-![Animation of the Zello voice path through Mira and Azure OpenAI Realtime.](docs/diagrams/github-apng/MiraVoiceFlow.png)
-
-</details>
-
-<details>
-<summary><strong>4. Model gateway</strong>: model traffic versus direct tool calls</summary>
-
-Model gateways handle model inference traffic. Downstream specialist tools,
-workplace services, and Fabric integrations keep their own routes and
-authorization boundaries.
-
-![Reference animation showing model gateway routing separately from direct specialist-tool calls.](docs/diagrams/github-apng/MiraModelGateway.png)
-
-</details>
-
-<details>
-<summary><strong>5. Fast procedures</strong>: reviewed evidence without a live-source fallback</summary>
-
-Procedure lookups use a hydrated, reviewed snapshot and local index. Retrieving
-that evidence does not require a router-model call; speaking the answer still
-uses Realtime.
-
-![Animation of local reviewed-procedure retrieval and the separate voice-rendering path.](docs/diagrams/github-apng/MiraFastProcedures.png)
-
-</details>
-
-<details>
-<summary><strong>6. Evidence loop</strong>: tool request, execution and grounded result</summary>
-
-Follow a tool call through application execution and the return of evidence to
-the answering agent.
-
-![Animation of an agent tool call, application execution, and evidence returned for a grounded answer.](docs/diagrams/github-apng/MiraEvidenceLoop.png)
-
-</details>
-
-<details>
-<summary><strong>7. Fabric boundary</strong>: select an explicit grounding route</summary>
-
-The reference design distinguishes direct DAX execution from a Fabric IQ Data
-Agent route. They are alternative execution modes, not an automatic fallback
-chain.
-
-![Animation of the application-to-Fabric boundary with separate direct DAX and Data Agent execution modes.](docs/diagrams/github-apng/MiraFabricBoundary.png)
-
-</details>
-
-<details>
-<summary><strong>8. Content release</strong>: reviewed content without rebuilding application images</summary>
-
-Follow source review, immutable snapshot publication, active-revision selection
-and validated activation. Redis distributes snapshots and control information,
-not private conversation data.
-
-![Animation of reviewed content moving through GitHub release controls, Redis snapshot publication, and router activation.](docs/diagrams/github-apng/MiraContentRelease.png)
-
-</details>
+| Walkthrough | Duration | Content |
+|---|---:|---|
+| [Full architecture explainer](https://dcasati.github.io/mira/#reference) | 2:08 | Native Remotion scenes covering voice, evidence, routing, and content delivery. |
+| [Voice flow](https://dcasati.github.io/mira/#voice) | 0:20 | Radio audio, gateway routing, and the spoken response. |
+| [Model gateway](https://dcasati.github.io/mira/#models) | 0:20 | Model inference traffic and direct tool-call boundaries. |
+| [Reviewed procedures](https://dcasati.github.io/mira/#procedures) | 0:20 | Local retrieval, cited evidence, and speech rendering. |
+| [Evidence loop](https://dcasati.github.io/mira/#evidence) | 0:08 | Repeating evidence signals through the native composition. |
+| [Fabric boundary](https://dcasati.github.io/mira/#fabric) | 0:20 | Application tool execution and Fabric grounding routes. |
+| [Content release](https://dcasati.github.io/mira/#content) | 0:20 | Reviewed source, release distribution, and local activation. |
+| [Architecture diagram overlay](https://dcasati.github.io/mira/#overview) | 0:52 | A separate composition tracing signals over the supplied static diagram. |
 
 ## Repository layout
 
