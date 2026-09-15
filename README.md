@@ -15,7 +15,7 @@ source and authorization boundaries.
 
 **[Play the Remotion architecture walkthrough](https://dcasati.github.io/mira/)**
 
-[![Preview of the native Remotion architecture explainer. Select to play the full walkthrough.](docs/diagrams/remotion-posters/MiraReferenceArchitecture.png)](https://dcasati.github.io/mira/)
+[![Animated preview of the native Remotion architecture explainer. Select to play the full walkthrough.](docs/diagrams/remotion-posters/MiraReferenceArchitecture-preview.gif)](https://dcasati.github.io/mira/)
 
 [Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
 [Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
@@ -47,7 +47,8 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 These videos are rendered directly from the original Remotion compositions at
 60 fps. [Open the player](https://dcasati.github.io/mira/) for playback, seeking,
-and fullscreen controls. The images in this README are previews, not players.
+and fullscreen controls. The GIF above previews the opening eight seconds;
+select it to play the full walkthrough.
 
 | Walkthrough | Duration | Content |
 |---|---:|---|
