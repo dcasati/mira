@@ -5,22 +5,12 @@ questions over push-to-talk radio and returns concise, grounded spoken answers.
 
 <img src="https://raw.githubusercontent.com/dcasati/mira/main/docs/diagrams/github-gifs/MiraOverviewFlow.gif" alt="App Demo">
 
-**[Watch the full-resolution overview](https://dcasati.github.io/mira/media/MiraOverviewFlow.mp4)** ·
-[All walkthroughs](https://dcasati.github.io/mira/)
-
 Start with **“Operator, …”** or **“Dispatcher, …”**. Mira handles the voice
 conversation, routes the question to an appropriate source, and returns a concise
 spoken answer. Reviewed procedures and live operational evidence keep separate
 source and authorization boundaries.
 
-[Architecture](#architecture) ·
-[Repository layout](#repository-layout) · [Getting started](#getting-started)
-
 ## Architecture
-
-[Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
-[Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
-[Detailed architecture](docs/diagrams/mira-architecture.png)
 
 The architecture separates three responsibilities:
 
@@ -31,18 +21,12 @@ The architecture separates three responsibilities:
 3. **Governed content:** reviewed, versioned snapshots are validated and activated
    independently of application image releases.
 
-<details>
-<summary><strong>Detailed architecture and control boundaries</strong></summary>
+<strong>Detailed architecture and control boundaries</strong>
 
 The detailed view shows procedure retrieval, specialist routing, workplace
 identity, alternative Fabric execution modes, and the governed content lifecycle.
 
 [![Detailed Mira reference architecture, including local procedure retrieval, specialist tools, identity boundaries, Fabric execution modes, and the GitHub-to-Redis content release path.](docs/diagrams/mira-architecture.svg)](docs/diagrams/mira-architecture.png)
-
-[Full-size PNG](docs/diagrams/mira-architecture.png) ·
-[Scalable SVG](docs/diagrams/mira-architecture.svg)
-
-</details>
 
 ## Repository layout
 
