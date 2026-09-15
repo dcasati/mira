@@ -14,18 +14,11 @@ source and authorization boundaries.
 
 ## Architecture
 
-[![Mira reference architecture: Zello voice operations connect to services on AKS, Azure OpenAI Realtime, specialist tools, Fabric grounding, and governed content snapshots.](docs/diagrams/mira-architecture-overview.svg)](docs/diagrams/mira-architecture-overview.png)
+[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-gifs/MiraOverviewFlow.gif)](docs/diagrams/github-gifs/MiraOverviewFlow.gif)
 
-[Full-size overview](docs/diagrams/mira-architecture-overview.png) ·
-[Overview SVG](docs/diagrams/mira-architecture-overview.svg) ·
+[Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
+[Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
 [Detailed architecture](docs/diagrams/mira-architecture.png)
-
-> **Reference visuals versus current deployment:** these diagrams and animations
-> illustrate the earlier shared-APIM gateway design. As of September 15, 2026,
-> Realtime voice/WebSockets use the existing BasicV2 APIM, while router HTTP model
-> calls, including streaming responses, use the new AIGateway tier. Specialist
-> tools, workplace services and Fabric integrations keep their direct routes;
-> they do not all pass through the model gateway.
 
 The architecture separates three responsibilities:
 
@@ -51,8 +44,8 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 ## Animated walkthroughs
 
-Open a topic to view its animation. For a nonanimated view, use the diagrams
-above. The gateway deployment note applies to these reference animations too.
+Open a topic to view its animation. For a nonanimated view, use the static
+diagram links above.
 
 <details>
 <summary><strong>1. End-to-end overview</strong> — from radio question to grounded answer</summary>
@@ -88,9 +81,9 @@ and back to the worker.
 <details>
 <summary><strong>4. Model gateway</strong> — model traffic versus direct tool calls</summary>
 
-This scene illustrates the original shared-APIM routing. In the current split,
-the new AI Gateway handles HTTP model inference; the existing APIM retains voice
-WebSockets. Downstream tool calls remain separate.
+Model gateways handle model inference traffic. Downstream specialist tools,
+workplace services, and Fabric integrations keep their own routes and
+authorization boundaries.
 
 ![Reference animation showing model gateway routing separately from direct specialist-tool calls.](docs/diagrams/github-gifs/MiraModelGateway.gif)
 
@@ -193,10 +186,3 @@ follow step-by-step when asked to rebuild this infrastructure — it says
 what to ask the user for first, the exact order to create things in, and
 where to pause for the handful of steps that are portal-only (Fabric
 workspace access, Zello account setup) and can't be automated.
-
-## History note
-
-This repo was formed by merging three prior repositories
-(`dcasati/mira`, `dcasati/mira-operator-agent`,
-`dcasati/operator-matrix-ontology`) via `git subtree`, preserving each
-one's full commit history under its new path.
