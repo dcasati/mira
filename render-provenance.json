@@ -1,0 +1,106 @@
+{
+  "sourceRepository": "https://github.com/raykao/explainer-content",
+  "sourceProject": "videos/mira-architecture",
+  "sourceStatus": "Original local project; source files hash-pinned during rendering",
+  "sourceManifestSha256": "8594879c6cc7751c8fce5c62d0ee7bae60deaad009648ba69408b1a34f6504c4",
+  "remotionVersion": "4.0.500",
+  "renderedAt": "2026-09-15T20:09:47.249236+00:00",
+  "renders": [
+    {
+      "composition": "MiraReferenceArchitecture",
+      "seconds": 128,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 7680,
+      "bytes": 6122422,
+      "sha256": "b6cebc2ce8eaf9c50af175646ae949845b588fadc37408c4001b8249d79286ce",
+      "posterFrame": 90,
+      "posterSha256": "d60f50cb8b8416c33f1ddd4d6fd864263b810347eacead698e5a29c0f099ef3b"
+    },
+    {
+      "composition": "MiraVoiceFlow",
+      "seconds": 20,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 1200,
+      "bytes": 941578,
+      "sha256": "93de9d47feed74ca268e171c47d7aeaf104f3343b7ac0d8237b9efa101ad3b0b",
+      "posterFrame": 90,
+      "posterSha256": "903cd326a0c70d839d8a47e8c53383fe2da090c24e8876b8a568e9dd455e22a9"
+    },
+    {
+      "composition": "MiraModelGateway",
+      "seconds": 20,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 1200,
+      "bytes": 979933,
+      "sha256": "c90eb102aa570178e2409e862994dcf2c1e01599a2cb800cea2e92b752088f3c",
+      "posterFrame": 90,
+      "posterSha256": "d35fd120d2612fc4280d12cee326773cce9f21594c08996574cbef2be0f8bdf9"
+    },
+    {
+      "composition": "MiraFastProcedures",
+      "seconds": 20,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 1200,
+      "bytes": 861504,
+      "sha256": "b85fc20cd5b7af765f0c45259c7393fe0fc5a402b53454783498435505fbe3bd",
+      "posterFrame": 90,
+      "posterSha256": "56c95c4f8e04315f806ca813d6a3e254029a3138a539c285c57ef3e190fcbdd1"
+    },
+    {
+      "composition": "MiraFabricBoundary",
+      "seconds": 20,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 1200,
+      "bytes": 916432,
+      "sha256": "55df8cc6c5d8b039a44f961042cfe8f791689cfe14c66831ff6ad716faa74c49",
+      "posterFrame": 90,
+      "posterSha256": "2f742c18f8ac85b4b207b35506559461da4e5f2f5fda0461816c63245e6276e2"
+    },
+    {
+      "composition": "MiraContentRelease",
+      "seconds": 20,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 1200,
+      "bytes": 1060913,
+      "sha256": "9da429d07c638eb5feec85009c7fb7af56ccd1bb55b85038bf5a614cd73fb5e1",
+      "posterFrame": 90,
+      "posterSha256": "d36e6c19da100c6acd124cffa7f7b35a92da3136a15907822ff6a744668d336e"
+    },
+    {
+      "composition": "MiraEvidenceLoop",
+      "seconds": 8,
+      "fps": 60,
+      "width": 1920,
+      "height": 1080,
+      "frames": 480,
+      "bytes": 281465,
+      "sha256": "8bcc9ffc314ac300c08f2617037ea020c263a4d1c02df90509a9a0b626511369",
+      "posterFrame": 90,
+      "posterSha256": "ac3f2e7f462c9a54d67c2647f9939ddbc157695d5396dbadbe4d01e3f8bfc594"
+    },
+    {
+      "composition": "MiraOverviewFlow",
+      "seconds": 52,
+      "fps": 60,
+      "width": 1920,
+      "height": 1400,
+      "frames": 3120,
+      "bytes": 4681008,
+      "sha256": "fd02411b8c4ee17e8e696741873c9a6e03b85400f154550e0d8562ea7c99d3cf",
+      "posterFrame": 90,
+      "posterSha256": "4be76fc05a82a80e56dc4d16ba0677ca012f8f6097ceac5ed653345dddfe48a4"
+    }
+  ]
+}

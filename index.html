@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MIRA architecture animations</title>
+  <title>MIRA Remotion walkthroughs</title>
   <script>
     (() => {
       const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
@@ -103,7 +103,7 @@
     }
     figcaption { padding: 16px 20px; }
     figcaption a { display: inline-block; margin-top: 8px; }
-    img { display: block; width: 100%; height: auto; }
+    video { display: block; width: 100%; height: auto; }
     .error { padding: 16px 20px; color: var(--cp-danger); }
     footer { color: var(--cp-text-soft); font-size: 14px; margin: 24px 0; }
     @media (max-width: 600px) { body { padding: 16px; } }
@@ -112,108 +112,171 @@
 <body>
 <main>
   <header>
-    <h1>MIRA architecture animations</h1>
-    <p>Voice flow, source routing, operational grounding, and governed content delivery.</p>
+    <h1>MIRA Remotion walkthroughs</h1>
+    <p>Original Remotion compositions rendered at 60 fps. Start with the full scene-based explainer below.</p>
     <div class="controls">
-      <button id="playback" type="button" disabled>Pause animations</button>
+      <button id="playback" type="button" disabled>Play walkthrough</button>
       <span id="status" role="status"></span>
       <a href="https://github.com/dcasati/mira">Repository</a>
     </div>
-    <noscript><p>Animations play directly as images. Use each "Open animation" link for a full-size view.</p></noscript>
-    <nav aria-label="Animation topics">
-      <a href="#overview">Overview</a>
-      <a href="#reference">Reference architecture</a>
+    <noscript><p>Use the video controls to play, pause, seek, or enter fullscreen.</p></noscript>
+    <nav aria-label="Walkthrough topics">
+      <a href="#reference">Full explainer</a>
       <a href="#voice">Voice flow</a>
       <a href="#models">Model gateway</a>
       <a href="#procedures">Procedures</a>
       <a href="#evidence">Evidence loop</a>
       <a href="#fabric">Fabric boundary</a>
       <a href="#content">Content release</a>
+      <a href="#overview">Diagram overlay</a>
     </nav>
   </header>
-  <figure id="overview">
-    <figcaption><h2>End-to-end overview</h2><a href="assets/MiraOverviewFlow.gif">Open animation</a></figcaption>
-    <img src="assets/MiraOverviewFlow.gif" data-animation="assets/MiraOverviewFlow.gif" data-poster="assets/MiraOverviewFlow.png" width="960" height="700" alt="Radio question, voice gateway, grounded response, and governed content paths.">
-  </figure>
   <figure id="reference">
-    <figcaption><h2>Reference architecture</h2><a href="assets/MiraReferenceArchitecture.gif">Open animation</a></figcaption>
-    <img src="assets/MiraReferenceArchitecture.gif" data-animation="assets/MiraReferenceArchitecture.gif" data-poster="assets/MiraReferenceArchitecture.png" loading="lazy" width="960" height="540" alt="MIRA components and their model, tool, identity, and content boundaries.">
+    <figcaption><h2>Full architecture explainer</h2><p>128 seconds. Native Remotion scenes with moving request and response signals.</p><a href="media/MiraReferenceArchitecture.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="metadata" width="1920" height="1080" poster="posters/MiraReferenceArchitecture.png" aria-label="Full architecture explainer">
+      <source src="media/MiraReferenceArchitecture.mp4" type="video/mp4">
+      <a href="media/MiraReferenceArchitecture.mp4">Open the architecture video.</a>
+    </video>
   </figure>
   <figure id="voice">
-    <figcaption><h2>Voice flow</h2><a href="assets/MiraVoiceFlow.gif">Open animation</a></figcaption>
-    <img src="assets/MiraVoiceFlow.gif" data-animation="assets/MiraVoiceFlow.gif" data-poster="assets/MiraVoiceFlow.png" loading="lazy" width="960" height="540" alt="Zello voice traffic through the gateway and Azure OpenAI Realtime.">
+    <figcaption><h2>Voice flow</h2><p>20 seconds. Radio audio, gateway routing, and the spoken response.</p><a href="media/MiraVoiceFlow.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraVoiceFlow.png" aria-label="Voice flow">
+      <source src="media/MiraVoiceFlow.mp4" type="video/mp4">
+      <a href="media/MiraVoiceFlow.mp4">Open the voice flow video.</a>
+    </video>
   </figure>
   <figure id="models">
-    <figcaption><h2>Model gateway</h2><a href="assets/MiraModelGateway.gif">Open animation</a></figcaption>
-    <img src="assets/MiraModelGateway.gif" data-animation="assets/MiraModelGateway.gif" data-poster="assets/MiraModelGateway.png" loading="lazy" width="960" height="540" alt="Model inference routing separated from direct operational tool calls.">
+    <figcaption><h2>Model gateway</h2><p>20 seconds. Model traffic and direct tool-call boundaries.</p><a href="media/MiraModelGateway.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraModelGateway.png" aria-label="Model gateway">
+      <source src="media/MiraModelGateway.mp4" type="video/mp4">
+      <a href="media/MiraModelGateway.mp4">Open the model gateway video.</a>
+    </video>
   </figure>
   <figure id="procedures">
-    <figcaption><h2>Reviewed procedures</h2><a href="assets/MiraFastProcedures.gif">Open animation</a></figcaption>
-    <img src="assets/MiraFastProcedures.gif" data-animation="assets/MiraFastProcedures.gif" data-poster="assets/MiraFastProcedures.png" loading="lazy" width="960" height="540" alt="Local reviewed-procedure retrieval followed by Realtime speech rendering.">
+    <figcaption><h2>Reviewed procedures</h2><p>20 seconds. Local retrieval, cited evidence, and speech rendering.</p><a href="media/MiraFastProcedures.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraFastProcedures.png" aria-label="Reviewed procedures">
+      <source src="media/MiraFastProcedures.mp4" type="video/mp4">
+      <a href="media/MiraFastProcedures.mp4">Open the procedures video.</a>
+    </video>
   </figure>
   <figure id="evidence">
-    <figcaption><h2>Evidence loop</h2><a href="assets/MiraEvidenceLoop.gif">Open animation</a></figcaption>
-    <img src="assets/MiraEvidenceLoop.gif" data-animation="assets/MiraEvidenceLoop.gif" data-poster="assets/MiraEvidenceLoop.png" loading="lazy" width="960" height="540" alt="A tool request, application execution, and grounded evidence returned to the agent.">
+    <figcaption><h2>Evidence loop</h2><p>8 seconds. A repeating evidence flow through the native composition.</p><a href="media/MiraEvidenceLoop.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraEvidenceLoop.png" aria-label="Evidence loop">
+      <source src="media/MiraEvidenceLoop.mp4" type="video/mp4">
+      <a href="media/MiraEvidenceLoop.mp4">Open the evidence loop video.</a>
+    </video>
   </figure>
   <figure id="fabric">
-    <figcaption><h2>Fabric boundary</h2><a href="assets/MiraFabricBoundary.gif">Open animation</a></figcaption>
-    <img src="assets/MiraFabricBoundary.gif" data-animation="assets/MiraFabricBoundary.gif" data-poster="assets/MiraFabricBoundary.png" loading="lazy" width="960" height="540" alt="Separate direct DAX and Fabric IQ Data Agent execution routes.">
+    <figcaption><h2>Fabric boundary</h2><p>20 seconds. Application tool execution and Fabric grounding routes.</p><a href="media/MiraFabricBoundary.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraFabricBoundary.png" aria-label="Fabric boundary">
+      <source src="media/MiraFabricBoundary.mp4" type="video/mp4">
+      <a href="media/MiraFabricBoundary.mp4">Open the Fabric boundary video.</a>
+    </video>
   </figure>
   <figure id="content">
-    <figcaption><h2>Content release</h2><a href="assets/MiraContentRelease.gif">Open animation</a></figcaption>
-    <img src="assets/MiraContentRelease.gif" data-animation="assets/MiraContentRelease.gif" data-poster="assets/MiraContentRelease.png" loading="lazy" width="960" height="540" alt="Reviewed snapshots moving through release controls, Redis distribution, and router activation.">
+    <figcaption><h2>Content release</h2><p>20 seconds. Reviewed source, release distribution, and local activation.</p><a href="media/MiraContentRelease.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1080" poster="posters/MiraContentRelease.png" aria-label="Content release">
+      <source src="media/MiraContentRelease.mp4" type="video/mp4">
+      <a href="media/MiraContentRelease.mp4">Open the content release video.</a>
+    </video>
+  </figure>
+  <figure id="overview">
+    <figcaption><h2>Architecture diagram overlay</h2><p>52 seconds. A separate Remotion composition tracing signals over the supplied diagram.</p><a href="media/MiraOverviewFlow.mp4">Open MP4</a></figcaption>
+    <video controls muted playsinline loop preload="none" width="1920" height="1400" poster="posters/MiraOverviewFlow.png" aria-label="Architecture diagram overlay">
+      <source src="media/MiraOverviewFlow.mp4" type="video/mp4">
+      <a href="media/MiraOverviewFlow.mp4">Open the diagram overlay video.</a>
+    </video>
   </figure>
   <footer>
-    Playback runs in this page. No GitHub playback setting is required.
-    If reduced motion is enabled, select Play animations to start.
+    Use the video controls to play, pause, seek, or enter fullscreen.
+    Reduced motion disables automatic playback; you can still select Play.
+    <a href="render-provenance.json">Remotion render metadata</a>.
     <a href="assets/NOTICE.md">Icon attribution</a>.
   </footer>
 </main>
 <script>
-  const images = [...document.querySelectorAll("img[data-animation]")];
+  const videos = [...document.querySelectorAll("video")];
+  const main = document.querySelector("#reference video");
   const button = document.getElementById("playback");
   const status = document.getElementById("status");
   const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let paused = preference.matches;
-  let userSelected = false;
+  let active = null;
 
-  function updatePlayback() {
-    for (const image of images) {
-      const source = paused ? image.dataset.poster : image.dataset.animation;
-      if (image.getAttribute("src") !== source) image.src = source;
+  function reportError(video, message) {
+    console.error(message);
+    const figure = video.closest("figure");
+    let error = figure.querySelector(".error");
+    if (!error) {
+      error = document.createElement("p");
+      error.className = "error";
+      error.setAttribute("role", "alert");
+      figure.append(error);
     }
-    button.textContent = paused ? "Play animations" : "Pause animations";
-    status.textContent = paused ? "Animations paused." : "Animations playing.";
+    error.textContent = message;
   }
 
-  for (const image of images) {
-    image.addEventListener("error", () => {
-      console.error("Animation asset failed to load:", image.getAttribute("src"));
-      const figure = image.closest("figure");
-      if (!figure.querySelector(".error")) {
-        const message = document.createElement("p");
-        message.className = "error";
-        message.setAttribute("role", "alert");
-        message.textContent = "The image could not load. Use Open animation to retry it directly.";
-        figure.append(message);
+  function playVideo(video) {
+    video.play().catch((error) => {
+      if (error.name === "NotAllowedError") {
+        console.warn("Browser blocked automatic video playback.");
+        status.textContent = "Use Play walkthrough or the video controls to start.";
+      } else if (error.name === "AbortError") {
+        status.textContent = "Playback interrupted. Select Play to resume.";
+      } else {
+        reportError(video, "The video could not play. Use Open MP4 to try it directly.");
       }
     });
-    image.addEventListener("load", () => image.closest("figure").querySelector(".error")?.remove());
+  }
+
+  for (const video of videos) {
+    video.addEventListener("play", () => {
+      active = video;
+      for (const other of videos) {
+        if (other !== video) other.pause();
+      }
+      button.textContent = main.paused ? "Play walkthrough" : "Pause walkthrough";
+    });
+    video.addEventListener("playing", () => {
+      status.textContent = `Playing: ${video.getAttribute("aria-label")}.`;
+      video.closest("figure").querySelector(".error")?.remove();
+    });
+    video.addEventListener("waiting", () => {
+      if (active === video) status.textContent = "Buffering video.";
+    });
+    video.addEventListener("pause", () => {
+      button.textContent = main.paused ? "Play walkthrough" : "Pause walkthrough";
+      if (active === video) status.textContent = "Playback paused.";
+    });
+    const loadFailure = () => {
+      reportError(video, "The video failed to load. Use Open MP4 to try it directly.");
+    };
+    video.addEventListener("error", loadFailure);
+    for (const source of video.querySelectorAll("source")) {
+      source.addEventListener("error", loadFailure);
+    }
   }
 
   button.addEventListener("click", () => {
-    paused = !paused;
-    userSelected = true;
-    updatePlayback();
+    if (main.paused) {
+      main.scrollIntoView({block: "center"});
+      playVideo(main);
+    }
+    else main.pause();
+  });
+  function selectedVideo() {
+    return videos.find((video) => `#${video.closest("figure").id}` === location.hash) || main;
+  }
+  window.addEventListener("hashchange", () => {
+    if (!preference.matches) playVideo(selectedVideo());
   });
   preference.addEventListener("change", () => {
-    if (!userSelected) {
-      paused = preference.matches;
-      updatePlayback();
+    if (preference.matches) {
+      for (const video of videos) video.pause();
     }
   });
-  updatePlayback();
   button.disabled = false;
+  if (preference.matches) status.textContent = "Select Play to start the walkthrough.";
+  else playVideo(selectedVideo());
 </script>
 </body>
 </html>
