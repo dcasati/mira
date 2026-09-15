@@ -143,19 +143,6 @@ architecture:
 | [`services/operator-agent/`](services/operator-agent/) | Python operator agent and AKS router, with reviewed procedure retrieval and specialist tools for grounded operational answers. Includes Foundry-hosted and self-hosted variants; see the [agent architecture](services/operator-agent/docs/architecture.md) for component details. | Python |
 | [`ontology-governance/`](ontology-governance/) | Governance pipeline: Fabric's Git integration syncs the Ontology item here, GitHub Actions transforms it and publishes it to Azure Managed Redis via Entra ID (no access keys, no stored secrets). This keeps ontology schema changes PR-reviewable instead of silent. | Python (scripts) + GitHub Actions |
 
-## Why one repo
-
-`mira-gateway` and `operator-agent` change together constantly — a routing
-change on one side usually needs a matching tool-schema change on the other.
-Keeping them in one repo means those changes land in a single, atomic PR
-instead of being coordinated across separate repos.
-
-`ontology-governance` is included here as the current reference example of
-the governance pattern, but note that in a real multi-customer deployment
-each customer would have **their own** ontology-governance content (their
-own Fabric workspace, their own curated enrichment) while reusing the same
-`mira-gateway` + `operator-agent` code unchanged.
-
 ## Getting started
 
 Each subfolder is self-contained with its own dependencies, Dockerfile, and
