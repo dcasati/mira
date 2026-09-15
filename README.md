@@ -1,8 +1,7 @@
 # Mira
 
-**AI copilot for frontline radio operations.** Mira lets a worker ask an
-operational question over an ordinary push-to-talk radio and get a spoken,
-grounded answer back — hands-free, no app, no screen.
+**AI copilot for frontline radio operations.** Mira accepts operational
+questions over push-to-talk radio and returns concise, grounded spoken answers.
 
 Start with **“Operator, …”** or **“Dispatcher, …”**. Mira handles the voice
 conversation, routes the question to an appropriate source, and returns a concise
@@ -14,7 +13,7 @@ source and authorization boundaries.
 
 ## Architecture
 
-[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-gifs/MiraOverviewFlow.gif)](docs/diagrams/github-gifs/MiraOverviewFlow.gif)
+[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)](docs/diagrams/github-apng/MiraOverviewFlow.png)
 
 [Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
 [Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
@@ -44,91 +43,91 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 ## Animated walkthroughs
 
-Open a topic to view its animation. For a nonanimated view, use the static
-diagram links above.
+Open a topic to view its animation. Previews use animated PNG (APNG). For a
+nonanimated view, use the static diagram links above.
 
 <details>
-<summary><strong>1. End-to-end overview</strong> — from radio question to grounded answer</summary>
+<summary><strong>1. End-to-end overview</strong>: from radio question to grounded answer</summary>
 
 Follow the voice, source-routing and governed-content paths across the system.
 
-![Animated overview of Mira's voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-gifs/MiraOverviewFlow.gif)
+![Animated overview of Mira's voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)
 
 [Download the overview video (MP4)](docs/diagrams/mira-architecture-overview-animated.mp4)
 
 </details>
 
 <details>
-<summary><strong>2. Reference architecture</strong> — the components and their boundaries</summary>
+<summary><strong>2. Reference architecture</strong>: the components and their boundaries</summary>
 
 See how the voice gateway, router, model backends, specialist tools and content
 release plane fit together.
 
-![Animated tour of Mira's reference architecture and service boundaries.](docs/diagrams/github-gifs/MiraReferenceArchitecture.gif)
+![Animated tour of Mira's reference architecture and service boundaries.](docs/diagrams/github-apng/MiraReferenceArchitecture.png)
 
 </details>
 
 <details>
-<summary><strong>3. Voice flow</strong> — Zello and Azure OpenAI Realtime</summary>
+<summary><strong>3. Voice flow</strong>: Zello and Azure OpenAI Realtime</summary>
 
 Trace the voice path through the gateway to the separate Realtime model backend
 and back to the worker.
 
-![Animation of the Zello voice path through Mira and Azure OpenAI Realtime.](docs/diagrams/github-gifs/MiraVoiceFlow.gif)
+![Animation of the Zello voice path through Mira and Azure OpenAI Realtime.](docs/diagrams/github-apng/MiraVoiceFlow.png)
 
 </details>
 
 <details>
-<summary><strong>4. Model gateway</strong> — model traffic versus direct tool calls</summary>
+<summary><strong>4. Model gateway</strong>: model traffic versus direct tool calls</summary>
 
 Model gateways handle model inference traffic. Downstream specialist tools,
 workplace services, and Fabric integrations keep their own routes and
 authorization boundaries.
 
-![Reference animation showing model gateway routing separately from direct specialist-tool calls.](docs/diagrams/github-gifs/MiraModelGateway.gif)
+![Reference animation showing model gateway routing separately from direct specialist-tool calls.](docs/diagrams/github-apng/MiraModelGateway.png)
 
 </details>
 
 <details>
-<summary><strong>5. Fast procedures</strong> — reviewed evidence without a live-source fallback</summary>
+<summary><strong>5. Fast procedures</strong>: reviewed evidence without a live-source fallback</summary>
 
 Procedure lookups use a hydrated, reviewed snapshot and local index. Retrieving
 that evidence does not require a router-model call; speaking the answer still
 uses Realtime.
 
-![Animation of local reviewed-procedure retrieval and the separate voice-rendering path.](docs/diagrams/github-gifs/MiraFastProcedures.gif)
+![Animation of local reviewed-procedure retrieval and the separate voice-rendering path.](docs/diagrams/github-apng/MiraFastProcedures.png)
 
 </details>
 
 <details>
-<summary><strong>6. Evidence loop</strong> — tool request, execution and grounded result</summary>
+<summary><strong>6. Evidence loop</strong>: tool request, execution and grounded result</summary>
 
 Follow a tool call through application execution and the return of evidence to
 the answering agent.
 
-![Animation of an agent tool call, application execution, and evidence returned for a grounded answer.](docs/diagrams/github-gifs/MiraEvidenceLoop.gif)
+![Animation of an agent tool call, application execution, and evidence returned for a grounded answer.](docs/diagrams/github-apng/MiraEvidenceLoop.png)
 
 </details>
 
 <details>
-<summary><strong>7. Fabric boundary</strong> — select an explicit grounding route</summary>
+<summary><strong>7. Fabric boundary</strong>: select an explicit grounding route</summary>
 
 The reference design distinguishes direct DAX execution from a Fabric IQ Data
 Agent route. They are alternative execution modes, not an automatic fallback
 chain.
 
-![Animation of the application-to-Fabric boundary with separate direct DAX and Data Agent execution modes.](docs/diagrams/github-gifs/MiraFabricBoundary.gif)
+![Animation of the application-to-Fabric boundary with separate direct DAX and Data Agent execution modes.](docs/diagrams/github-apng/MiraFabricBoundary.png)
 
 </details>
 
 <details>
-<summary><strong>8. Content release</strong> — reviewed content without rebuilding application images</summary>
+<summary><strong>8. Content release</strong>: reviewed content without rebuilding application images</summary>
 
 Follow source review, immutable snapshot publication, active-revision selection
 and validated activation. Redis distributes snapshots and control information,
 not private conversation data.
 
-![Animation of reviewed content moving through GitHub release controls, Redis snapshot publication, and router activation.](docs/diagrams/github-gifs/MiraContentRelease.gif)
+![Animation of reviewed content moving through GitHub release controls, Redis snapshot publication, and router activation.](docs/diagrams/github-apng/MiraContentRelease.png)
 
 </details>
 
@@ -148,14 +147,14 @@ architecture:
 Each subfolder is self-contained with its own dependencies, Dockerfile, and
 (where applicable) Kubernetes manifests:
 
-- `services/mira-gateway/` — see its own README for build/run instructions,
+- `services/mira-gateway/`: see its own README for build/run instructions,
   including how to produce the local `bin/mira` binary (both the plain
   Go-only build used for unit tests, and the full native build with
   Opus/Whisper support for actually running it).
-- `services/operator-agent/` — see `docs/architecture.md` for how grounding
+- `services/operator-agent/`: see `docs/architecture.md` for how grounding
   works, and `docs/slides/` for a technical demo deck and a partner
   go-to-market deck.
-- `ontology-governance/` — see its own README for how to connect a Fabric
+- `ontology-governance/`: see its own README for how to connect a Fabric
   workspace's Git integration and how the GitHub Actions publish pipeline
   works.
 
@@ -163,13 +162,13 @@ Each subfolder is self-contained with its own dependencies, Dockerfile, and
 
 [`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md) is a full as-built
 snapshot of every Azure resource, identity, RBAC role, and Kubernetes
-object behind a live deployment of this system — captured directly from
+object behind a live deployment of this system, captured directly from
 Azure/`kubectl`, with `az` commands to recreate each piece in a fresh
 subscription. Start there if you're standing this up from scratch.
 
 [`docs/REBUILD_PLAYBOOK.md`](docs/REBUILD_PLAYBOOK.md) is written
 specifically for an AI coding agent (Copilot, Microsoft Scout, etc.) to
-follow step-by-step when asked to rebuild this infrastructure — it says
+follow step-by-step when asked to rebuild this infrastructure. It specifies
 what to ask the user for first, the exact order to create things in, and
 where to pause for the handful of steps that are portal-only (Fabric
 workspace access, Zello account setup) and can't be automated.
