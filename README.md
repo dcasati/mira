@@ -3,12 +3,27 @@
 **AI copilot for frontline radio operations.** Mira accepts operational
 questions over push-to-talk radio and returns concise, grounded spoken answers.
 
-<img src="https://raw.githubusercontent.com/dcasati/mira/main/docs/diagrams/github-gifs/MiraOverviewFlow.gif" alt="App Demo">
+<img src="https://raw.githubusercontent.com/dcasati/mira/main/docs/diagrams/github-gifs/MiraOverviewFlow.gif" alt="Animated MIRA architecture overview: radio interaction, grounded answers, and governed content">
 
 Start with **“Operator, …”** or **“Dispatcher, …”**. Mira handles the voice
 conversation, routes the question to an appropriate source, and returns a concise
 spoken answer. Reviewed procedures and live operational evidence keep separate
 source and authorization boundaries.
+
+## Target audience
+
+Platform engineers and application developers integrating radio workflows with
+Azure AI and operational data, and operations teams evaluating voice access to
+reviewed procedures and authorized workplace information.
+
+## What MIRA does
+
+| Capability | Responsibility |
+|---|---|
+| Radio interaction | Receive Zello transmissions, detect wake words locally, and return spoken responses. |
+| Source-aware answers | Route questions to reviewed procedure evidence or configured specialist and live-data tools. |
+| Operational grounding | Keep procedure evidence, workplace information, and Fabric query results within their respective authorization boundaries. |
+| Governed content | Review and version content separately from application code and container releases. |
 
 ## Architecture
 
@@ -21,17 +36,28 @@ The architecture separates three responsibilities:
 3. **Governed content:** reviewed, versioned snapshots are validated and activated
    independently of application image releases.
 
-<strong>Detailed architecture and control boundaries</strong>
+### Detailed architecture and control boundaries
 
 The detailed view shows procedure retrieval, specialist routing, workplace
 identity, alternative Fabric execution modes, and the governed content lifecycle.
 
 [![Detailed Mira reference architecture, including local procedure retrieval, specialist tools, identity boundaries, Fabric execution modes, and the GitHub-to-Redis content release path.](docs/diagrams/mira-architecture.svg)](docs/diagrams/mira-architecture.png)
 
+## Solution components
+
+| Component | Role |
+|---|---|
+| [Zello Channel API](https://developers.zello.com/) | Push-to-talk audio transport. |
+| [Azure Kubernetes Service](https://learn.microsoft.com/en-us/azure/aks/) | Container runtime for the Go gateway and Python router. |
+| [Azure OpenAI Realtime](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/realtime-audio) | Voice-model sessions and spoken response generation. |
+| [Microsoft Entra Workload ID](https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview) | Azure workload authentication without embedding identity credentials in application images. |
+| [Microsoft Fabric](https://learn.microsoft.com/en-us/fabric/) | Operational grounding for configured Fabric integrations. |
+| [Azure Managed Redis](https://learn.microsoft.com/en-us/azure/redis/) | Governed schema and content distribution, separate from live operational queries. |
+| [GitHub Actions](https://docs.github.com/en/actions) | Automated publication of reviewed ontology changes. |
+
 ## Repository layout
 
-Three co-developed components are versioned together as one reference
-architecture:
+Application services and governance content:
 
 | Path | What it is | Language |
 |---|---|---|
@@ -41,31 +67,41 @@ architecture:
 
 ## Getting started
 
-Each subfolder is self-contained with its own dependencies, Dockerfile, and
-(where applicable) Kubernetes manifests:
+### Before you begin
 
-- `services/mira-gateway/`: see its own README for build/run instructions,
-  including how to produce the local `bin/mira` binary (both the plain
-  Go-only build used for unit tests, and the full native build with
-  Opus/Whisper support for actually running it).
-- `services/operator-agent/`: see `docs/architecture.md` for how grounding
-  works, and `docs/slides/` for a technical demo deck and a partner
-  go-to-market deck.
-- `ontology-governance/`: see its own README for how to connect a Fabric
-  workspace's Git integration and how the GitHub Actions publish pipeline
-  works.
+- Git, Docker, Azure CLI, and `kubectl`.
+- Go 1.25 or later for gateway development, plus the Python dependencies for
+  the selected operator-agent variant.
+- An Azure subscription, an AKS cluster, and access to a deployed Realtime model.
+- A dedicated Zello account, channel access, and Channel API authorization.
+- Permissions for each data integration you enable. Fabric workspace access
+  is required for Fabric grounding, not for every radio interaction.
+
+Full native gateway builds also require libopus, whisper.cpp, and a Whisper
+model. The [gateway prerequisites](services/mira-gateway/README.md#prerequisites)
+describe the local and container build requirements. Keep credentials out of Git.
+
+### Clone the repository
+
+```bash
+git clone https://github.com/dcasati/mira.git
+cd mira
+```
+
+### Configure the components
+
+| Step | Guide |
+|---|---|
+| 1. Set up radio and Realtime access | [Gateway setup and build instructions](services/mira-gateway/README.md). |
+| 2. Select the operator-agent implementation and grounding route | [Agent implementations](services/operator-agent/) and [grounding architecture](services/operator-agent/docs/architecture.md). |
+| 3. Configure ontology publication if using Fabric ontology grounding | [Ontology governance](ontology-governance/README.md). |
+
+Follow the component-specific configuration and deployment instructions. These
+are separate services, not a single-command installation.
 
 ## Infrastructure
 
-[`docs/INFRASTRUCTURE.md`](docs/INFRASTRUCTURE.md) is a full as-built
-snapshot of every Azure resource, identity, RBAC role, and Kubernetes
-object behind a live deployment of this system, captured directly from
-Azure/`kubectl`, with `az` commands to recreate each piece in a fresh
-subscription. Start there if you're standing this up from scratch.
-
-[`docs/REBUILD_PLAYBOOK.md`](docs/REBUILD_PLAYBOOK.md) is written
-specifically for an AI coding agent (Copilot, Microsoft Scout, etc.) to
-follow step-by-step when asked to rebuild this infrastructure. It specifies
-what to ask the user for first, the exact order to create things in, and
-where to pause for the handful of steps that are portal-only (Fabric
-workspace access, Zello account setup) and can't be automated.
+| Guide | Purpose |
+|---|---|
+| [Infrastructure inventory](docs/INFRASTRUCTURE.md) | Azure resources, identities, role assignments, and Kubernetes configuration. |
+| [Rebuild playbook](docs/REBUILD_PLAYBOOK.md) | Ordered setup steps, required inputs, and manual approval points. |
