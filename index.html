@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIRA architecture animations</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+    main { max-width: 1000px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 36px); }
+    h2 { margin: 0; font-size: 20px; }
+    p { margin: 8px 0 16px; color: var(--cp-text-muted); }
+    a { color: var(--cp-link); text-underline-offset: 3px; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 4px; }
+    .controls, nav { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
+    button {
+      padding: 12px 20px;
+      border: 1px solid var(--cp-accent);
+      border-radius: 10px;
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--cp-accent-hover); }
+    #status { color: var(--cp-text-muted); }
+    figure {
+      margin: 0 0 32px;
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      background: var(--cp-surface);
+      overflow: hidden;
+      scroll-margin-top: 16px;
+    }
+    figcaption { padding: 16px 20px; }
+    figcaption a { display: inline-block; margin-top: 8px; }
+    img { display: block; width: 100%; height: auto; }
+    .error { padding: 16px 20px; color: var(--cp-danger); }
+    footer { color: var(--cp-text-soft); font-size: 14px; margin: 24px 0; }
+    @media (max-width: 600px) { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>MIRA architecture animations</h1>
+    <p>Voice flow, source routing, operational grounding, and governed content delivery.</p>
+    <div class="controls">
+      <button id="playback" type="button" disabled>Pause animations</button>
+      <span id="status" role="status"></span>
+      <a href="https://github.com/dcasati/mira">Repository</a>
+    </div>
+    <noscript><p>Animations play directly as images. Use each "Open animation" link for a full-size view.</p></noscript>
+    <nav aria-label="Animation topics">
+      <a href="#overview">Overview</a>
+      <a href="#reference">Reference architecture</a>
+      <a href="#voice">Voice flow</a>
+      <a href="#models">Model gateway</a>
+      <a href="#procedures">Procedures</a>
+      <a href="#evidence">Evidence loop</a>
+      <a href="#fabric">Fabric boundary</a>
+      <a href="#content">Content release</a>
+    </nav>
+  </header>
+  <figure id="overview">
+    <figcaption><h2>End-to-end overview</h2><a href="assets/MiraOverviewFlow.gif">Open animation</a></figcaption>
+    <img src="assets/MiraOverviewFlow.gif" data-animation="assets/MiraOverviewFlow.gif" data-poster="assets/MiraOverviewFlow.png" width="960" height="700" alt="Radio question, voice gateway, grounded response, and governed content paths.">
+  </figure>
+  <figure id="reference">
+    <figcaption><h2>Reference architecture</h2><a href="assets/MiraReferenceArchitecture.gif">Open animation</a></figcaption>
+    <img src="assets/MiraReferenceArchitecture.gif" data-animation="assets/MiraReferenceArchitecture.gif" data-poster="assets/MiraReferenceArchitecture.png" loading="lazy" width="960" height="540" alt="MIRA components and their model, tool, identity, and content boundaries.">
+  </figure>
+  <figure id="voice">
+    <figcaption><h2>Voice flow</h2><a href="assets/MiraVoiceFlow.gif">Open animation</a></figcaption>
+    <img src="assets/MiraVoiceFlow.gif" data-animation="assets/MiraVoiceFlow.gif" data-poster="assets/MiraVoiceFlow.png" loading="lazy" width="960" height="540" alt="Zello voice traffic through the gateway and Azure OpenAI Realtime.">
+  </figure>
+  <figure id="models">
+    <figcaption><h2>Model gateway</h2><a href="assets/MiraModelGateway.gif">Open animation</a></figcaption>
+    <img src="assets/MiraModelGateway.gif" data-animation="assets/MiraModelGateway.gif" data-poster="assets/MiraModelGateway.png" loading="lazy" width="960" height="540" alt="Model inference routing separated from direct operational tool calls.">
+  </figure>
+  <figure id="procedures">
+    <figcaption><h2>Reviewed procedures</h2><a href="assets/MiraFastProcedures.gif">Open animation</a></figcaption>
+    <img src="assets/MiraFastProcedures.gif" data-animation="assets/MiraFastProcedures.gif" data-poster="assets/MiraFastProcedures.png" loading="lazy" width="960" height="540" alt="Local reviewed-procedure retrieval followed by Realtime speech rendering.">
+  </figure>
+  <figure id="evidence">
+    <figcaption><h2>Evidence loop</h2><a href="assets/MiraEvidenceLoop.gif">Open animation</a></figcaption>
+    <img src="assets/MiraEvidenceLoop.gif" data-animation="assets/MiraEvidenceLoop.gif" data-poster="assets/MiraEvidenceLoop.png" loading="lazy" width="960" height="540" alt="A tool request, application execution, and grounded evidence returned to the agent.">
+  </figure>
+  <figure id="fabric">
+    <figcaption><h2>Fabric boundary</h2><a href="assets/MiraFabricBoundary.gif">Open animation</a></figcaption>
+    <img src="assets/MiraFabricBoundary.gif" data-animation="assets/MiraFabricBoundary.gif" data-poster="assets/MiraFabricBoundary.png" loading="lazy" width="960" height="540" alt="Separate direct DAX and Fabric IQ Data Agent execution routes.">
+  </figure>
+  <figure id="content">
+    <figcaption><h2>Content release</h2><a href="assets/MiraContentRelease.gif">Open animation</a></figcaption>
+    <img src="assets/MiraContentRelease.gif" data-animation="assets/MiraContentRelease.gif" data-poster="assets/MiraContentRelease.png" loading="lazy" width="960" height="540" alt="Reviewed snapshots moving through release controls, Redis distribution, and router activation.">
+  </figure>
+  <footer>
+    Playback runs in this page. No GitHub playback setting is required.
+    If reduced motion is enabled, select Play animations to start.
+    <a href="assets/NOTICE.md">Icon attribution</a>.
+  </footer>
+</main>
+<script>
+  const images = [...document.querySelectorAll("img[data-animation]")];
+  const button = document.getElementById("playback");
+  const status = document.getElementById("status");
+  const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let paused = preference.matches;
+  let userSelected = false;
+
+  function updatePlayback() {
+    for (const image of images) {
+      const source = paused ? image.dataset.poster : image.dataset.animation;
+      if (image.getAttribute("src") !== source) image.src = source;
+    }
+    button.textContent = paused ? "Play animations" : "Pause animations";
+    status.textContent = paused ? "Animations paused." : "Animations playing.";
+  }
+
+  for (const image of images) {
+    image.addEventListener("error", () => {
+      console.error("Animation asset failed to load:", image.getAttribute("src"));
+      const figure = image.closest("figure");
+      if (!figure.querySelector(".error")) {
+        const message = document.createElement("p");
+        message.className = "error";
+        message.setAttribute("role", "alert");
+        message.textContent = "The image could not load. Use Open animation to retry it directly.";
+        figure.append(message);
+      }
+    });
+    image.addEventListener("load", () => image.closest("figure").querySelector(".error")?.remove());
+  }
+
+  button.addEventListener("click", () => {
+    paused = !paused;
+    userSelected = true;
+    updatePlayback();
+  });
+  preference.addEventListener("change", () => {
+    if (!userSelected) {
+      paused = preference.matches;
+      updatePlayback();
+    }
+  });
+  updatePlayback();
+  button.disabled = false;
+</script>
+</body>
+</html>
