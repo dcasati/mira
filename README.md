@@ -3,7 +3,7 @@
 **AI copilot for frontline radio operations.** Mira accepts operational
 questions over push-to-talk radio and returns concise, grounded spoken answers.
 
-[![Animated MIRA architecture overview showing voice, evidence, and content flows.](docs/diagrams/remotion-posters/MiraOverviewFlow.gif)](https://dcasati.github.io/mira/media/MiraOverviewFlow.mp4)
+<img src="https://raw.githubusercontent.com/dcasati/mira/main/docs/diagrams/github-gifs/MiraOverviewFlow.gif" alt="App Demo">
 
 **[Watch the full-resolution overview](https://dcasati.github.io/mira/media/MiraOverviewFlow.mp4)** ·
 [All walkthroughs](https://dcasati.github.io/mira/)
