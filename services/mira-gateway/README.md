@@ -138,7 +138,7 @@ azure.workload.identity/client-id: "<managed-identity-client-id>"
 Production environment variables:
 
 ```text
-MIRA_WAKE_WORD=MIRA,OPERATOR
+MIRA_WAKE_WORD=MIRA,OPERATOR,DISPATCHER
 MIRA_CONVERSATION_TIMEOUT=45s
 MIRA_WHISPER_MODEL_PATH=/models/ggml-tiny.en.bin
 MIRA_MAX_RX_SECONDS=60
@@ -171,6 +171,39 @@ LOG_LEVEL=INFO
 The Foundry IQ settings are optional but required for the manuals POC. In Azure AI Foundry, create a project agent with file search, upload the manuals to its vector store, and set `FOUNDRY_PROJECT_ENDPOINT` plus `FOUNDRY_IQ_AGENT_NAME`. When enabled, Operator exposes `query_foundry_iq_manuals` to the Realtime model and uses it before answering manual, setup, maintenance, troubleshooting, error-code, or documented-spec questions.
 
 `MIRA_LOOKUP_FILLER` is spoken before longer tool lookups, such as Foundry IQ manual searches or telemetry queries. Set it to a short phrase like `Hold on.` or leave it empty to disable filler speech.
+
+The default wake words include Mira, Operator, and Dispatcher. Mira's existing
+ASR spellings (Meera, Myra, Mirah, and Meara) remain supported. An explicit
+`MIRA_WAKE_WORD` value replaces the default list; custom overrides are respected.
+
+Legacy router presentation labels are parsed in the gateway before a tool result
+reaches Realtime. The short radio answer becomes plain `answer` text; the full
+detail is retained separately as `follow_up_context` for explicit "details" or "more"
+on the same topic. A single formatted audio lookup requests speech of only that
+clean short answer, without another tool call. Plain evidence, other tools,
+text responses, and multi-tool reasoning retain their existing paths. Incomplete
+recognized presentation envelopes produce a lookup error rather than a partial
+answer or spoken formatting labels.
+
+The legacy operator and router prompts default to one short dispatcher
+transmission, aiming for 20 words or fewer: the requested fact or status, then
+stop. They do not offer more detail, add unsolicited advice, or expand an
+acknowledgement such as "copy" into another explanation. Explicit requests for
+detail still work. Safety warnings, uncertainty, scope, and required approvals
+take precedence over the length target; this is prompt guidance, not audio or
+text truncation. These instructions are compiled into the gateway and packaged
+in the router image, so source edits alone do not update a running deployment.
+
+Audio response requests explicitly carry their profile's instructions, including
+formatted router-answer speech requests that override session instructions.
+Formatted single-answer speech uses an empty input context to avoid expanding
+the answer from prior conversation history, but remains in the conversation for
+follow-ups. Lookup acknowledgements use an out-of-band, empty-context response.
+The gateway transmits acknowledgement audio only if its returned transcript
+matches the configured phrase (ignoring case, spacing and punctuation). Missing
+or mismatched transcripts are logged and the optional acknowledgement is skipped;
+the lookup and its final answer continue. This does not validate the final answer's
+word count or semantic content.
 
 Example worker prompts:
 

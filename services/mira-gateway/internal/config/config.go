@@ -70,7 +70,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		WakeWord:                      env("MIRA_WAKE_WORD", "MIRA,OPERATOR"),
+		WakeWord:                      env("MIRA_WAKE_WORD", "MIRA,OPERATOR,DISPATCHER"),
 		ConversationTimeout:           durationEnv("MIRA_CONVERSATION_TIMEOUT", 120*time.Second),
 		WhisperModelPath:              os.Getenv("MIRA_WHISPER_MODEL_PATH"),
 		MaxRXSeconds:                  intEnv("MIRA_MAX_RX_SECONDS", 60),

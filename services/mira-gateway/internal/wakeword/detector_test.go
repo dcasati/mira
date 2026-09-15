@@ -33,7 +33,28 @@ func TestMatchTranscriptActivatesOperator(t *testing.T) {
 	if !got.Activated {
 		t.Fatal("expected activation")
 	}
+
 	if got.Query != "get me an exit." {
 		t.Fatalf("query = %q", got.Query)
+	}
+}
+
+func TestDispatcherPreservesExistingWakeAliases(t *testing.T) {
+	const aliases = "MIRA,OPERATOR,DISPATCHER"
+	for _, alias := range []string{"Mira", "Meera", "Myra", "Mirah", "Meara", "Operator", "Dispatcher", "dispatcher"} {
+		t.Run(alias, func(t *testing.T) {
+			got := MatchTranscript(aliases, alias+", who is on call?")
+			if !got.Activated || got.Query != "who is on call?" {
+				t.Fatalf("unexpected match: %+v", got)
+			}
+		})
+	}
+	for _, transcript := range []string{"dispatchers are scheduled", "redispatcher", "dispatch the report"} {
+		if got := MatchTranscript(aliases, transcript); got.Activated {
+			t.Fatalf("unexpected activation for %q", transcript)
+		}
+	}
+	if got := MatchTranscript(aliases, "Dispatcher."); !got.Activated || got.Query != "" {
+		t.Fatalf("wake-only Dispatcher failed: %+v", got)
 	}
 }

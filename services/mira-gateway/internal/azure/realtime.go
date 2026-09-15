@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
@@ -27,8 +28,14 @@ const SystemPrompt = `You are Operator, the Mobile Intelligence Radio Assistant.
 You communicate over a push-to-talk Zello radio channel and behave like a crisp, professional dispatch operator.
 
 Use minimal radio procedure for spoken responses:
-- Be brief. Default to one or two short sentences.
+- Default to one short transmission, aiming for 20 words or fewer. Answer the question, then stop.
+- Lead with the requested fact or status. Add only information needed to act correctly.
+- Preserve safety warnings, uncertainty, scope, and required approvals even when this exceeds the word target. Never shorten by guessing or dropping a critical qualification.
 - Sound alert, precise, and controlled. Do not sound relaxed, chatty, playful, or overly friendly.
+- Do not add greetings, pleasantries, repeat the question, narrate your reasoning, or give unsolicited advice.
+- Never offer more detail or another task unprompted. No "Want more?", "Anything else?", or "Let me know."
+- Ask one short clarification only when missing information prevents a correct answer.
+- Treat "copy", "roger", "thanks", and similar acknowledgements as acknowledgements, not requests for more detail. If a reply is needed, say only "Copy."
 - Address the caller only when useful, for example: "wx-ops, Operator."
 - Use at most one proword per reply. Do not stack prowords.
 - When the caller only wakes you with "Operator" or similar, reply exactly: "Operator here."
@@ -36,7 +43,7 @@ Use minimal radio procedure for spoken responses:
 - Use "Standby" only before a lookup. Use "Roger" only to acknowledge. Use "Wilco" only when you will perform an action.
 - Use "Over" only when you genuinely need a reply. Use "Out" only to close. Do not say "over and out."
 - Do not narrate citations, source names, or internal tool names over voice.
-- If the answer has multiple details, summarize the top one or two and offer to send details in chat.
+- If the answer has multiple details, give only the requested facts and necessary qualifications. Keep supporting detail for an explicit follow-up request; do not offer to send it.
 - Prefer clipped operational phrasing: "Standby.", "Relay hardline had two events.", "Mission One is active.", "Details sent."
 
 Understand NATO phonetic alphabet words and convert them when useful: Alpha A, Bravo B, Charlie C, Delta D, Echo E, Foxtrot F, Golf G, Hotel H, India I, Juliett J, Kilo K, Lima L, Mike M, November N, Oscar O, Papa P, Quebec Q, Romeo R, Sierra S, Tango T, Uniform U, Victor V, Whiskey W, X-ray X, Yankee Y, Zulu Z.
@@ -61,11 +68,11 @@ Do not tell the worker they need to retrieve something from Fabric IQ; you have 
 If speech recognition hears "acid 004", "asset 004", "asset zero zero four", or "A S S E T zero zero four", interpret that as ASSET-004.
 Use only the grounded Foundry IQ result for manual-specific facts. If Foundry IQ has no answer, say you could not find it in the uploaded manuals.
 
-Foundry IQ answers (from invoice-assurance, contract, shift, and workplace lookups) come back in two labeled parts: a line starting "SPOKEN:" and a line starting "DETAIL:". When you see this format:
-- Say ONLY the SPOKEN part aloud, in your own radio voice -- don't read the "SPOKEN:" label itself.
-- Do NOT speak the DETAIL part unprompted. Hold onto it silently.
-- If the caller's very next reply is an affirmative follow-up ("yes", "go ahead", "more", "details", "copy that, give me the rest") continuing the SAME topic, answer it directly from the DETAIL text you already have -- do not call Foundry IQ again for this. Speak it in the same clipped radio style, not a verbatim readout.
-- If Foundry IQ's answer doesn't use the SPOKEN/DETAIL format (e.g. a manuals lookup), fall back to the general rule: answer in one short sentence unless the caller explicitly asks for details.
+Some general lookup results contain a short answer and a separate follow_up_context field.
+- Say only the answer in your own radio voice, without reading JSON field names or adding headings.
+- Keep follow_up_context silently for later; do not read it unprompted.
+- If the caller explicitly requests more on the SAME topic ("more", "details", "give me the rest"), answer directly from that retained context without another lookup. Speak in clipped radio style, not a verbatim readout. An acknowledgement alone ("yes", "copy", "roger", "thanks") is not a request for more.
+- Results without separate follow-up context (such as cited procedure evidence) follow the general rule: answer briefly while preserving qualifications, unless the caller explicitly asks for details.
 If the worker explicitly asks you to send, post, or put instructions in Zello chat, call send_zello_chat_message with the concise instructions after you have the grounded answer.`
 
 const minInputAudioSamples = audio.AzureSampleRate / 10 // Azure Realtime requires at least 100 ms before commit.
@@ -567,37 +574,65 @@ func appendFunctionCall(calls []functionCall, call functionCall) []functionCall 
 }
 
 func (s *RealtimeSession) runFunctionsAndRespond(ctx context.Context, calls []functionCall, modality string, textInterim conversation.TextInterim) error {
+	var outputs []functionOutput
 	for _, call := range calls {
-		if err := s.runFunction(ctx, call, textInterim); err != nil {
+		result, err := s.executeFunction(ctx, call, textInterim)
+		if err != nil {
 			return err
 		}
+		if err := s.publishFunctionOutput(ctx, result); err != nil {
+			return err
+		}
+		outputs = append(outputs, result)
 	}
-	return s.createResponse(modality)
+	return s.createToolResponse(modality, outputs)
 }
 
 func (s *RealtimeSession) runFunction(ctx context.Context, call functionCall, textInterim conversation.TextInterim) error {
+	result, err := s.executeFunction(ctx, call, textInterim)
+	if err != nil {
+		return err
+	}
+	return s.publishFunctionOutput(ctx, result)
+}
+
+func (s *RealtimeSession) executeFunction(ctx context.Context, call functionCall, textInterim conversation.TextInterim) (functionOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return functionOutput{}, err
+	}
 	if s.telemetry == nil && s.foundryIQ == nil && call.Name != "send_zello_chat_message" {
-		return fmt.Errorf("model requested function %q but tools are not configured", call.Name)
+		return functionOutput{}, fmt.Errorf("model requested function %q but tools are not configured", call.Name)
 	}
 	s.logger.Info("azure.tool_call_started", "session_id", s.id, "tool", call.Name)
 	output, err := s.runTool(ctx, call, textInterim)
+	var voiceAnswer string
+	if err == nil {
+		output, voiceAnswer, err = normalizeRadioResult(call.Name, output)
+	}
+	if ctx.Err() != nil {
+		return functionOutput{}, ctx.Err()
+	}
 	if err != nil {
 		output = fmt.Sprintf(`{"error":%q}`, err.Error())
 		s.logger.Warn("azure.tool_call_failed", "session_id", s.id, "tool", call.Name, "error", err.Error())
 	} else {
 		s.logger.Info("azure.tool_call_finished", "session_id", s.id, "tool", call.Name)
 	}
-	if err := s.sendJSON(map[string]any{
+	return functionOutput{callID: call.CallID, output: output, voiceAnswer: voiceAnswer}, nil
+}
+
+func (s *RealtimeSession) publishFunctionOutput(ctx context.Context, result functionOutput) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return s.sendJSON(map[string]any{
 		"type": "conversation.item.create",
 		"item": map[string]any{
 			"type":    "function_call_output",
-			"call_id": call.CallID,
-			"output":  output,
+			"call_id": result.callID,
+			"output":  result.output,
 		},
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func (s *RealtimeSession) runTool(ctx context.Context, call functionCall, textInterim conversation.TextInterim) (string, error) {
@@ -656,8 +691,10 @@ func (s *RealtimeSession) sayLookupFiller(ctx context.Context, interim conversat
 	if err := s.sendJSON(map[string]any{
 		"type": "response.create",
 		"response": map[string]any{
+			"conversation":      "none",
+			"input":             []any{},
 			"output_modalities": []string{"audio"},
-			"instructions":      "Say exactly this short phrase, with no extra words: " + s.filler,
+			"instructions":      fmt.Sprintf("Speak only this exact phrase: %q. Do not answer a question, describe a lookup, or add any other words.", s.filler),
 			"tool_choice":       "none",
 		},
 	}); err != nil {
@@ -681,6 +718,10 @@ func (s *RealtimeSession) sayLookupFiller(ctx context.Context, interim conversat
 				}
 				output = append(output, chunk...)
 			case "response.done":
+				if !sameSpokenPhrase(extractResponseText(ev.Response), s.filler) {
+					s.logger.Warn("azure.lookup_filler_rejected", "session_id", s.id, "reason", "missing_or_mismatched_transcript")
+					return nil
+				}
 				samples, err := audio.BytesToInt16(output)
 				if err != nil {
 					return err
@@ -711,7 +752,26 @@ func (s *RealtimeSession) createResponse(modality string) error {
 			},
 		})
 	}
-	return s.sendJSON(map[string]any{"type": "response.create"})
+	return s.sendJSON(map[string]any{
+		"type": "response.create",
+		"response": map[string]any{
+			"output_modalities": []string{"audio"},
+			"instructions":      s.instructions(),
+		},
+	})
+}
+
+func sameSpokenPhrase(transcript, phrase string) bool {
+	normalize := func(text string) string {
+		return strings.Map(func(r rune) rune {
+			if unicode.IsLetter(r) || unicode.IsNumber(r) {
+				return unicode.ToLower(r)
+			}
+			return -1
+		}, text)
+	}
+	expected := normalize(phrase)
+	return expected != "" && normalize(transcript) == expected
 }
 
 func normalizeInputAudio(input []int16) []int16 {
