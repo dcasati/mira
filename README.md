@@ -13,7 +13,9 @@ source and authorization boundaries.
 
 ## Architecture
 
-[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)](docs/diagrams/github-apng/MiraOverviewFlow.png)
+**[Play architecture animations](https://dcasati.github.io/mira/)**
+
+[![Animated Mira architecture overview: follow radio questions through voice operations, evidence sources, and governed content distribution.](docs/diagrams/github-apng/MiraOverviewFlow.png)](https://dcasati.github.io/mira/)
 
 [Static overview (PNG)](docs/diagrams/mira-architecture-overview.png) ·
 [Static overview (SVG)](docs/diagrams/mira-architecture-overview.svg) ·
@@ -43,8 +45,10 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 
 ## Animated walkthroughs
 
-Open a topic to view its animation. Previews use animated PNG (APNG). For a
-nonanimated view, use the static diagram links above.
+For standalone playback with Play/Pause controls,
+[open the animation viewer](https://dcasati.github.io/mira/).
+Inline previews below use animated PNG (APNG). For a nonanimated view, use the
+static diagram links above.
 
 <details>
 <summary><strong>1. End-to-end overview</strong>: from radio question to grounded answer</summary>
