@@ -13,7 +13,7 @@ conversation, routes the question to an appropriate source, and returns a concis
 spoken answer. Reviewed procedures and live operational evidence keep separate
 source and authorization boundaries.
 
-[Architecture](#architecture) · [Animated walkthroughs](#animated-walkthroughs) ·
+[Architecture](#architecture) ·
 [Repository layout](#repository-layout) · [Getting started](#getting-started)
 
 ## Architecture
@@ -43,24 +43,6 @@ identity, alternative Fabric execution modes, and the governed content lifecycle
 [Scalable SVG](docs/diagrams/mira-architecture.svg)
 
 </details>
-
-## Animated walkthroughs
-
-These videos are rendered directly from the original Remotion compositions at
-60 fps. [Open the player](https://dcasati.github.io/mira/) for playback, seeking,
-and fullscreen controls. The GIF above contains the complete 52-second
-architecture overview; select it to open the full-resolution video.
-
-| Walkthrough | Duration | Content |
-|---|---:|---|
-| [Full architecture explainer](https://dcasati.github.io/mira/#reference) | 2:08 | Native Remotion scenes covering voice, evidence, routing, and content delivery. |
-| [Voice flow](https://dcasati.github.io/mira/#voice) | 0:20 | Radio audio, gateway routing, and the spoken response. |
-| [Model gateway](https://dcasati.github.io/mira/#models) | 0:20 | Model inference traffic and direct tool-call boundaries. |
-| [Reviewed procedures](https://dcasati.github.io/mira/#procedures) | 0:20 | Local retrieval, cited evidence, and speech rendering. |
-| [Evidence loop](https://dcasati.github.io/mira/#evidence) | 0:08 | Repeating evidence signals through the native composition. |
-| [Fabric boundary](https://dcasati.github.io/mira/#fabric) | 0:20 | Application tool execution and Fabric grounding routes. |
-| [Content release](https://dcasati.github.io/mira/#content) | 0:20 | Reviewed source, release distribution, and local activation. |
-| [Architecture diagram overlay](https://dcasati.github.io/mira/#overview) | 0:52 | A separate composition tracing signals over the supplied static diagram. |
 
 ## Repository layout
 
