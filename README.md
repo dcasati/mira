@@ -10,6 +10,25 @@ conversation, routes the question to an appropriate source, and returns a concis
 spoken answer. Reviewed procedures and live operational evidence keep separate
 source and authorization boundaries.
 
+## Example conversation
+
+Illustrative offline exchange, not a recording or operational traffic. The name,
+team, and shift time are fictional. This example assumes a configured roster
+integration; actual answers depend on the authorized sources available.
+
+| Speaker | Transmission |
+|---|---|
+| Frontline worker | Operator, who is on call for maintenance? |
+| MIRA operator | The published roster lists Jordan until eight p.m. local time. |
+| Frontline worker | Are they available right now? |
+| MIRA operator | The roster confirms scheduled coverage, not Jordan's current availability. |
+| Frontline worker | Say again the shift end time. |
+| MIRA operator | Eight p.m. local time. |
+| Frontline worker | Copy. |
+
+MIRA keeps routine replies short and uses conversation context for follow-up
+questions. Acknowledgments such as "Copy" do not request additional detail.
+
 ## Target audience
 
 Platform engineers and application developers integrating radio workflows with
